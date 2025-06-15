@@ -4,6 +4,7 @@ import usersRouter from "./routes/users.router.js";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 
+const ADMIN_USERS = ['admin', 'adrian'];
 
 const app = express();
 const PORT = 8080;
@@ -71,12 +72,44 @@ app.get('/session', (req, res) => {
   res.send(`Session: ${req.session.counter}, user: ${req.session.user}, location: ${req.session.location}`);
 });
 
+app.get('/remove-admin', (req, res) => {
+  delete req.session.admin;
+  res.send('Admin property removed from session');
+});
+
 app.get('/logout', (req, res) => {
   req.session.destroy();
   res.clearCookie('user');
   res.clearCookie('location');
   res.clearCookie('connect.sid');
   res.send('Session and cookies destroyed');
+});
+
+app.get('/login', (req, res) => {
+  const { username, password } = req.query;
+  if (username === 'admin' && password === '123456') {
+    req.session.user = username;
+    req.session.admin = true;
+    res.cookie('user', username, { signed: true, httpOnly: true });
+    res.cookie('location', 'Argentina', {});
+    res.send('Login successful');
+  } else {
+    delete req.session.admin;
+    res.send('Login failed');
+  }
+});
+
+function auth(req, res, next) {
+  console.log(req.session);
+  if (req.session?.admin && ADMIN_USERS.includes(req.session?.user)) {
+    next();
+  } else {
+    res.status(401).send('Access denied');
+  }
+}
+
+app.get('/admin', auth, (req, res) => {
+  res.send('Admin page');
 });
 
 
