@@ -6,7 +6,7 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import { engine } from 'express-handlebars';
 
-// import sessionsRouter from './routes/sessions.router.js'
+import sessionsRouter from './routes/sessions.router.js'
 import viewsRouter from './routes/views.router.js'
 
 const PORT = 8080;
@@ -101,19 +101,19 @@ app.get('/logout', (req, res) => {
   res.send('Session and cookies destroyed');
 });
 
-app.get('/login', (req, res) => {
-  const { username, password } = req.query;
-  if (username === 'admin' && password === '123456') {
-    req.session.user = username;
-    req.session.admin = true;
-    res.cookie('user', username, { signed: true, httpOnly: true });
-    res.cookie('location', 'Argentina', {});
-    res.send('Login successful');
-  } else {
-    delete req.session.admin;
-    res.send('Login failed');
-  }
-});
+// app.get('/login', (req, res) => {
+//   const { username, password } = req.query;
+//   if (username === 'admin' && password === '123456') {
+//     req.session.user = username;
+//     req.session.admin = true;
+//     res.cookie('user', username, { signed: true, httpOnly: true });
+//     res.cookie('location', 'Argentina', {});
+//     res.send('Login successful');
+//   } else {
+//     delete req.session.admin;
+//     res.send('Login failed');
+//   }
+// });
 
 function auth(req, res, next) {
   console.log(req.session);
@@ -141,15 +141,14 @@ app.get('/check-sessions', async (req, res) => {
 });
 
 app.get("/", (req, res) => {    
-  // res.send("Hello World");
   res.render('home')
 });
 
 // app.use("/api/users", usersRouter);
 
+// Mount the sessions router at the root level for profile and login routes
+app.use('/', sessionsRouter)
 app.use('/lab', viewsRouter)
-//app.use('/api/sessions', sessionsRouter)
-
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

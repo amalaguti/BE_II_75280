@@ -13,14 +13,17 @@ function isNotLoggedIn(req, res, next) {
 }
 
 router.get('/', isNotLoggedIn, (req, res) => {
+  console.log('Login page')
   res.render('login')
 })
 
 router.get('/register', isNotLoggedIn, (req, res) => {
+  console.log('Register page')
   res.render('register')
 })
 
 router.get('/profile', isLoggedIn, (req, res) => {
+  console.log('Profile page')
   res.render('profile', { user: req.session.user })
 })
 
