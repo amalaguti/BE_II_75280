@@ -58,6 +58,28 @@ app.get('/delete-cookies', (req, res) => {
   res.send('Cookies deleted');
 });
 
+app.get('/session', (req, res) => {
+  req.session.user = req.signedCookies.user || 'anonymous';
+  req.session.location = req.cookies.location || 'unknown';
+  // res.send('Session set');
+  if (req.session.counter) {
+    req.session.counter++;
+  } else {
+    req.session.counter = 1;
+  }
+  console.log(req.session);
+  res.send(`Session: ${req.session.counter}, user: ${req.session.user}, location: ${req.session.location}`);
+});
+
+app.get('/logout', (req, res) => {
+  req.session.destroy();
+  res.clearCookie('user');
+  res.clearCookie('location');
+  res.clearCookie('connect.sid');
+  res.send('Session and cookies destroyed');
+});
+
+
 app.get("/", (req, res) => {    
   res.send("Hello World");
 });
