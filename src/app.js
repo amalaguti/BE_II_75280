@@ -1,12 +1,15 @@
 import express, { json, urlencoded } from "express";
 import mongoose from "mongoose";
+import MongoStore from "connect-mongo";
 import usersRouter from "./routes/users.router.js";
 import cookieParser from "cookie-parser";
 import session from "express-session";
 import { engine } from 'express-handlebars';
 
+
 const PORT = 8080;
 const ADMIN_USERS = ['admin', 'adrian'];
+const MONGO_URI = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@cluster0.vnuoakk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const app = express();
 
@@ -26,11 +29,16 @@ app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: true,
+  store: MongoStore.create({
+    mongoUrl: MONGO_URI,
+    ttl: 3600,
+    autoRemove: 'native'
+  })
 }))
 
 
-const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@cluster0.vnuoakk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
-mongoose.connect(uri, {})
+
+mongoose.connect(MONGO_URI, {})
 .then(() => {
   console.log("Connected to MongoDB");
 })
@@ -118,6 +126,17 @@ app.get('/admin', auth, (req, res) => {
   res.send('Admin page');
 });
 
+app.get('/check-sessions', async (req, res) => {
+  try {
+    const sessions = await mongoose.connection.db.collection('sessions').find().toArray();
+    res.json({
+      totalSessions: sessions.length,
+      sessions: sessions
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
 
 app.get("/", (req, res) => {    
   // res.send("Hello World");
