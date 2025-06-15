@@ -3,14 +3,20 @@ import mongoose from "mongoose";
 import usersRouter from "./routes/users.router.js";
 import cookieParser from "cookie-parser";
 import session from "express-session";
+import { engine } from 'express-handlebars';
 
+const PORT = 8080;
 const ADMIN_USERS = ['admin', 'adrian'];
 
 const app = express();
-const PORT = 8080;
 
 app.use(json());
 app.use(urlencoded({ extended: true }));
+
+// Handlebars setup
+app.engine('handlebars', engine());
+app.set('view engine', 'handlebars');
+app.set('views', './src/views');
 
 // Cookies
 app.use(cookieParser(process.env.COOKIE_SECRET))
@@ -114,7 +120,8 @@ app.get('/admin', auth, (req, res) => {
 
 
 app.get("/", (req, res) => {    
-  res.send("Hello World");
+  // res.send("Hello World");
+  res.render('home')
 });
 
 app.use("/api/users", usersRouter);
