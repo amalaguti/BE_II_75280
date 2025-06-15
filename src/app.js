@@ -93,14 +93,6 @@ app.get('/remove-admin', (req, res) => {
   res.send('Admin property removed from session');
 });
 
-app.get('/logout', (req, res) => {
-  req.session.destroy();
-  res.clearCookie('user');
-  res.clearCookie('location');
-  res.clearCookie('connect.sid');
-  res.send('Session and cookies destroyed');
-});
-
 // app.get('/login', (req, res) => {
 //   const { username, password } = req.query;
 //   if (username === 'admin' && password === '123456') {

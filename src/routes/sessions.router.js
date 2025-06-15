@@ -16,6 +16,14 @@ router.post('/register', (req, res) => {
   res.redirect('/')
 })
 
+router.get('/login', (req, res) => {
+  // If user is already logged in, redirect to profile
+  if (req.session.user) {
+    return res.redirect('/profile')
+  }
+  res.render('login')
+})
+
 router.post('/login', (req, res) => {
   const { email, password } = req.body
 
@@ -52,6 +60,10 @@ router.get('/logout', (req, res) => {
     if (err) {
       return res.status(500).send('Error al cerrar sesión')
     }
+    // Clear all cookies
+    res.clearCookie('user');
+    res.clearCookie('location');
+    res.clearCookie('connect.sid');
     res.redirect('/login')
   })
 })
