@@ -2,6 +2,8 @@ import express, { json, urlencoded } from "express";
 import mongoose from "mongoose";
 import usersRouter from "./routes/users.router.js";
 import cookieParser from "cookie-parser";
+import session from "express-session";
+
 
 const app = express();
 const PORT = 8080;
@@ -11,6 +13,13 @@ app.use(urlencoded({ extended: true }));
 
 // Cookies
 app.use(cookieParser(process.env.COOKIE_SECRET))
+
+// Sessions
+app.use(session({
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: true,
+}))
 
 
 const uri = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGODB_PASS}@cluster0.vnuoakk.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
@@ -22,23 +31,34 @@ mongoose.connect(uri, {})
   console.log(err);
 });
 
-app.get('/set-cookie', (req, res) => {
+app.get('/set-cookies', (req, res) => {
   // Set a cookie with the name 'user' and the value 'adrian'
   // The cookie is signed and httpOnly
   res.cookie('user', 'adrian', { signed: true, httpOnly: true });
   // Send a response with the message 'Signed cookie set'
-  res.send('Signed cookie set');
-  console.log('/set-cookie Cookies: ', req.cookies)
-  console.log('/set-cookie Signed Cookies: ', req.signedCookies)  
+  res.cookie('location', 'Argentina', {});
+  res.send('Signed and not signed cookies set');
 });
 
-app.get("/", (req, res) => {
-    // Cookies that have not been signed
-    console.log('Cookies: ', req.cookies)
+app.get('/get-cookies', (req, res) => {
+  // Cookies that have not been signed
+  console.log('Cookies: ', req.cookies)
 
-    // Cookies that have been signed
-    console.log('Signed Cookies: ', req.signedCookies)
-    
+  // Cookies that have been signed
+  console.log('Signed Cookies: ', req.signedCookies)
+  res.send({
+    cookies: req.cookies,
+    signedCookies: req.signedCookies
+  });
+});
+
+app.get('/delete-cookies', (req, res) => {
+  res.clearCookie('user');
+  res.clearCookie('location');
+  res.send('Cookies deleted');
+});
+
+app.get("/", (req, res) => {    
   res.send("Hello World");
 });
 
