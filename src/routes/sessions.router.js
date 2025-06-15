@@ -10,10 +10,49 @@ const users = [{
   password: '123456'
 }]
 
+router.get('/register', (req, res) => {
+  // If user is already logged in, redirect to profile
+  if (req.session.user) {
+    return res.redirect('/profile')
+  }
+  res.render('register')
+})
+
 router.post('/register', (req, res) => {
   const { first_name, last_name, email, age, password } = req.body
-  users.push({ first_name, last_name, email, age, password })
-  res.redirect('/')
+
+  // Validate required fields
+  if (!first_name || !last_name || !email || !age || !password) {
+    return res.status(400).render('register', {
+      error: 'Todos los campos son requeridos'
+    })
+  }
+
+  // Check if email already exists
+  const existingUser = users.find(u => u.email === email)
+  if (existingUser) {
+    return res.status(400).render('register', {
+      error: 'El email ya está registrado'
+    })
+  }
+
+  // Add new user
+  const newUser = {
+    first_name,
+    last_name,
+    email,
+    age: parseInt(age),
+    password
+  }
+  users.push(newUser)
+
+  // Log in the new user
+  req.session.user = {
+    name: newUser.first_name,
+    email: newUser.email
+  }
+
+  res.redirect('/profile')
 })
 
 router.get('/login', (req, res) => {
