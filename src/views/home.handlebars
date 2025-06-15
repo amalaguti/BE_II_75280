@@ -1,1 +1,89 @@
-<h1>Example App: Home</h1>
+<div class="welcome-container">
+    <h1>Backend II - 75280</h1>
+    <p class="subtitle">Your session management playground</p>
+    
+    <div class="features">
+        <div class="feature-card">
+            <h3>Session Management</h3>
+            <p>Learn about cookies and sessions</p>
+        </div>
+        <div class="feature-card">
+            <h3>Authentication</h3>
+            <p>Explore user authentication</p>
+        </div>
+        <div class="feature-card">
+            <h3>MongoDB Storage</h3>
+            <p>See how sessions are stored</p>
+        </div>
+    </div>
+
+    <a href="/lab" class="cta-button">Go to Lab</a>
+</div>
+
+<style>
+    .welcome-container {
+        max-width: 800px;
+        margin: 0 auto;
+        padding: 2rem;
+        text-align: center;
+        font-family: Arial, sans-serif;
+    }
+
+    h1 {
+        color: #2c3e50;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+
+    .subtitle {
+        color: #7f8c8d;
+        font-size: 1.2rem;
+        margin-bottom: 2rem;
+    }
+
+    .features {
+        display: flex;
+        justify-content: space-around;
+        margin: 3rem 0;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .feature-card {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        flex: 1;
+        min-width: 200px;
+        transition: transform 0.2s;
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .feature-card h3 {
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+
+    .feature-card p {
+        color: #7f8c8d;
+    }
+
+    .cta-button {
+        display: inline-block;
+        background: #3498db;
+        color: white;
+        padding: 1rem 2rem;
+        border-radius: 5px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: background 0.2s;
+    }
+
+    .cta-button:hover {
+        background: #2980b9;
+    }
+</style>

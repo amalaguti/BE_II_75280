@@ -6,6 +6,8 @@ import cookieParser from "cookie-parser";
 import session from "express-session";
 import { engine } from 'express-handlebars';
 
+// import sessionsRouter from './routes/sessions.router.js'
+import viewsRouter from './routes/views.router.js'
 
 const PORT = 8080;
 const ADMIN_USERS = ['admin', 'adrian'];
@@ -143,7 +145,10 @@ app.get("/", (req, res) => {
   res.render('home')
 });
 
-app.use("/api/users", usersRouter);
+// app.use("/api/users", usersRouter);
+
+app.use('/lab', viewsRouter)
+//app.use('/api/sessions', sessionsRouter)
 
 
 app.listen(PORT, () => {
