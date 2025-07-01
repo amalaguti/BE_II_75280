@@ -1,30 +1,24 @@
 import { Router } from 'express'
+import { optionalAuth } from '../middleware/auth.js'
 
 const router = Router()
 
-function isLoggedIn(req, res, next) {
-  if (!req.session.user) return res.redirect('/')
-  next()
-}
-
-function isNotLoggedIn(req, res, next) {
-  if (req.session.user) return res.redirect('/profile')
-  next()
-}
-
-router.get('/', isNotLoggedIn, (req, res) => {
+router.get('/', optionalAuth, (req, res) => {
   console.log('Login page')
   res.render('login')
 })
 
-router.get('/register', isNotLoggedIn, (req, res) => {
+router.get('/register', optionalAuth, (req, res) => {
   console.log('Register page')
   res.render('register')
 })
 
-router.get('/profile', isLoggedIn, (req, res) => {
+router.get('/profile', optionalAuth, (req, res) => {
   console.log('Profile page')
-  res.render('profile', { user: req.session.user })
+  if (!req.user) {
+    return res.redirect('/users')
+  }
+  res.render('profile', { user: req.user })
 })
 
 export default router

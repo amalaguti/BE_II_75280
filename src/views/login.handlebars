@@ -37,7 +37,17 @@
       padding: 10px;
       border-radius: 8px;
       margin-bottom: 16px;
-      display: {{#if error}}block{{else}}none{{/if}};
+      display: none;
+    }
+
+    .success-message {
+      color: #155724;
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      display: none;
     }
 
     input[type="email"],
@@ -73,6 +83,11 @@
       background-color: #357ab8;
     }
 
+    button:disabled {
+      background-color: #ccc;
+      cursor: not-allowed;
+    }
+
     a {
       display: inline-block;
       margin-top: 16px;
@@ -88,13 +103,69 @@
 <body>
   <div class="login-container">
     <h2>Iniciar sesión</h2>
-    <div class="error-message">{{error}}</div>
-    <form method="POST" action="/login">
+    <div id="error-message" class="error-message"></div>
+    <div id="success-message" class="success-message"></div>
+    <form id="login-form">
       <input type="email" name="email" placeholder="Email" required />
       <input type="password" name="password" placeholder="Contraseña" required />
-      <button type="submit">Entrar</button>
+      <button type="submit" id="login-btn">Entrar</button>
     </form>
-    <a href="/register">¿No tenés cuenta? Registrate</a>
+    <a href="/users/register">¿No tenés cuenta? Registrate</a>
   </div>
+
+  <script>
+    document.getElementById('login-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(e.target);
+      const email = formData.get('email');
+      const password = formData.get('password');
+      
+      const loginBtn = document.getElementById('login-btn');
+      const errorDiv = document.getElementById('error-message');
+      const successDiv = document.getElementById('success-message');
+      
+      // Clear previous messages
+      errorDiv.style.display = 'none';
+      successDiv.style.display = 'none';
+      loginBtn.disabled = true;
+      loginBtn.textContent = 'Entrando...';
+      
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          // Store token in localStorage
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          
+          successDiv.textContent = 'Login exitoso! Redirigiendo...';
+          successDiv.style.display = 'block';
+          
+          // Redirect to profile
+          setTimeout(() => {
+            window.location.href = '/users/profile';
+          }, 1000);
+        } else {
+          errorDiv.textContent = data.error || 'Error en el login';
+          errorDiv.style.display = 'block';
+        }
+      } catch (error) {
+        errorDiv.textContent = 'Error de conexión';
+        errorDiv.style.display = 'block';
+      } finally {
+        loginBtn.disabled = false;
+        loginBtn.textContent = 'Entrar';
+      }
+    });
+  </script>
 </body>
 </html>

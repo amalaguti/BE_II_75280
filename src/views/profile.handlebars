@@ -91,32 +91,128 @@
       color: #666;
       margin: 0;
     }
+
+    .loading {
+      text-align: center;
+      padding: 2rem;
+      color: #666;
+    }
+
+    .error {
+      text-align: center;
+      padding: 2rem;
+      color: #dc3545;
+      background-color: #f8d7da;
+      border-radius: 8px;
+    }
   </style>
 </head>
 <body>
   <header class="header">
     <nav class="nav">
       <h1>Backend II - 75280</h1>
-      <a href="/logout">Cerrar sesión</a>
+      <a href="#" id="logout-btn">Cerrar sesión</a>
     </nav>
   </header>
 
   <main class="profile-container">
-    <div class="profile-header">
-      <h2>Bienvenido, {{user.name}}!</h2>
-      <p>{{user.email}}</p>
+    <div id="loading" class="loading">
+      Cargando perfil...
     </div>
-
-    <div class="profile-info">
-      <div class="info-item">
-        <h3>Nombre</h3>
-        <p>{{user.name}}</p>
+    
+    <div id="error" class="error" style="display: none;">
+      Error al cargar el perfil
+    </div>
+    
+    <div id="profile-content" style="display: none;">
+      <div class="profile-header">
+        <h2 id="user-name">Bienvenido!</h2>
+        <p id="user-email"></p>
       </div>
-      <div class="info-item">
-        <h3>Email</h3>
-        <p>{{user.email}}</p>
+
+      <div class="profile-info">
+        <div class="info-item">
+          <h3>Nombre</h3>
+          <p id="user-name-info"></p>
+        </div>
+        <div class="info-item">
+          <h3>Email</h3>
+          <p id="user-email-info"></p>
+        </div>
       </div>
     </div>
   </main>
+
+  <script>
+    // Check if user is logged in
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    
+    if (!token || !user.id) {
+      window.location.href = '/users';
+      exit;
+    }
+
+    // Load profile data
+    async function loadProfile() {
+      try {
+        const response = await fetch('/api/auth/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          displayProfile(data.user);
+        } else if (response.status === 401) {
+          // Token expired or invalid
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/users';
+        } else {
+          throw new Error('Error loading profile');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('error').style.display = 'block';
+      }
+    }
+
+    function displayProfile(userData) {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('profile-content').style.display = 'block';
+      
+      document.getElementById('user-name').textContent = `Bienvenido, ${userData.name}!`;
+      document.getElementById('user-email').textContent = userData.email;
+      document.getElementById('user-name-info').textContent = userData.name;
+      document.getElementById('user-email-info').textContent = userData.email;
+    }
+
+    // Logout functionality
+    document.getElementById('logout-btn').addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      try {
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+      } catch (error) {
+        console.error('Logout error:', error);
+      } finally {
+        // Always clear local storage and redirect
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        window.location.href = '/users';
+      }
+    });
+
+    // Load profile on page load
+    loadProfile();
+  </script>
 </body>
 </html>

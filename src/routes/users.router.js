@@ -3,10 +3,7 @@ import userModel from "../models/user.model.js";
 
 const router = Router();
 
-// Endpoints
-// router.get("/", (req, res) => {
-//     res.send("Hello World");
-// });
+
 router.get("/", async (req, res) => {
     try {
         const users = await userModel.find();

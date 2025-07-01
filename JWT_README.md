@@ -1,0 +1,216 @@
+# JWT Authentication System
+
+This project has been refactored to use **JSON Web Tokens (JWT)** with **Passport.js** instead of session-based authentication.
+
+## 🚀 Features
+
+- **JWT-based authentication** using Passport.js
+- **Password hashing** with bcryptjs
+- **Token-based API endpoints**
+- **Client-side token storage** in localStorage
+- **Automatic token validation** on protected routes
+
+## 📁 Project Structure
+
+```
+src/
+├── config/
+│   └── passport.js          # Passport JWT strategy configuration
+├── middleware/
+│   └── auth.js              # JWT authentication middleware
+├── routes/
+│   ├── auth.router.js       # Authentication endpoints (login, register, profile)
+│   ├── users.router.js      # User CRUD operations
+│   └── views.router.js      # View routes for frontend
+├── utils/
+│   └── jwt.js               # JWT utility functions
+└── views/                   # Handlebars templates
+    ├── login.handlebars     # Login form with AJAX
+    ├── register.handlebars  # Registration form with AJAX
+    └── profile.handlebars   # Profile page with JWT validation
+```
+
+## 🔧 API Endpoints
+
+### Authentication Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `POST` | `/api/auth/register` | Register a new user |
+| `POST` | `/api/auth/login` | Login user |
+| `GET` | `/api/auth/profile` | Get user profile (protected) |
+| `POST` | `/api/auth/logout` | Logout user |
+
+### View Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/users` | Login page |
+| `GET` | `/users/register` | Registration page |
+| `GET` | `/users/profile` | Profile page (protected) |
+
+## 🔐 Authentication Flow
+
+### 1. Registration
+```javascript
+POST /api/auth/register
+Content-Type: application/json
+
+{
+  "first_name": "John",
+  "last_name": "Doe", 
+  "email": "john@example.com",
+  "age": 25,
+  "password": "password123"
+}
+
+// Response
+{
+  "message": "Usuario registrado exitosamente",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "2",
+    "name": "John",
+    "email": "john@example.com"
+  }
+}
+```
+
+### 2. Login
+```javascript
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "email": "john@example.com",
+  "password": "password123"
+}
+
+// Response
+{
+  "message": "Login exitoso",
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "user": {
+    "id": "2", 
+    "name": "John",
+    "email": "john@example.com"
+  }
+}
+```
+
+### 3. Protected Routes
+```javascript
+GET /api/auth/profile
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+
+// Response
+{
+  "user": {
+    "id": "2",
+    "name": "John", 
+    "email": "john@example.com"
+  }
+}
+```
+
+## 🛠️ Middleware
+
+### `authenticateJWT`
+Protects routes that require authentication:
+```javascript
+import { authenticateJWT } from '../middleware/auth.js';
+
+router.get('/profile', authenticateJWT, (req, res) => {
+  // req.user contains the authenticated user
+  res.json({ user: req.user });
+});
+```
+
+### `optionalAuth`
+Allows routes to work with or without authentication:
+```javascript
+import { optionalAuth } from '../middleware/auth.js';
+
+router.get('/profile', optionalAuth, (req, res) => {
+  if (req.user) {
+    // User is authenticated
+    res.render('profile', { user: req.user });
+  } else {
+    // User is not authenticated
+    res.redirect('/users');
+  }
+});
+```
+
+## 🔧 Configuration
+
+### Environment Variables
+```bash
+JWT_SECRET=your-secret-key-here
+MONGODB_USER=your-mongodb-user
+MONGODB_PASS=your-mongodb-password
+COOKIE_SECRET=your-cookie-secret
+```
+
+### JWT Settings
+- **Expiration**: 24 hours
+- **Algorithm**: HS256
+- **Token Storage**: localStorage (client-side)
+
+## 🧪 Testing
+
+Run the test script to verify JWT functionality:
+```bash
+node test-jwt.js
+```
+
+## 🔄 Migration from Sessions
+
+### What Changed
+- ❌ Removed `express-session` and `connect-mongo`
+- ✅ Added `passport`, `passport-jwt`, `jsonwebtoken`, `bcryptjs`
+- ❌ Removed session-based authentication
+- ✅ Added JWT-based authentication
+- ❌ Removed server-side session storage
+- ✅ Added client-side token storage
+
+### Benefits
+- **Stateless**: No server-side session storage needed
+- **Scalable**: Works across multiple server instances
+- **Mobile-friendly**: Easy to implement in mobile apps
+- **API-first**: Perfect for REST APIs and SPAs
+
+## 🚀 Getting Started
+
+1. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+2. **Set environment variables**:
+   ```bash
+   export JWT_SECRET=your-secret-key
+   ```
+
+3. **Start the server**:
+   ```bash
+   npm start
+   ```
+
+4. **Test the API**:
+   ```bash
+   node test-jwt.js
+   ```
+
+5. **Access the web interface**:
+   - Login: http://localhost:8080/users
+   - Register: http://localhost:8080/users/register
+   - Profile: http://localhost:8080/users/profile (after login)
+
+## 🔒 Security Notes
+
+- JWT tokens are stored in localStorage (consider httpOnly cookies for production)
+- Passwords are hashed using bcryptjs with salt rounds of 10
+- JWT tokens expire after 24 hours
+- Always use HTTPS in production
+- Consider implementing token refresh mechanism for production use 

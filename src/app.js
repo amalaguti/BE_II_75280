@@ -1,13 +1,13 @@
 import express, { json, urlencoded } from "express";
 import mongoose from "mongoose";
-import MongoStore from "connect-mongo";
 import usersRouter from "./routes/users.router.js";
 import cookieParser from "cookie-parser";
-import session from "express-session";
+import passport from "passport";
 import { engine } from 'express-handlebars';
 
-import sessionsRouter from './routes/sessions.router.js'
+import authRouter from './routes/auth.router.js'
 import viewsRouter from './routes/views.router.js'
+import './config/passport.js'
 
 const PORT = 8080;
 const ADMIN_USERS = ['admin', 'adrian'];
@@ -23,22 +23,11 @@ app.engine('handlebars', engine());
 app.set('view engine', 'handlebars');
 app.set('views', './src/views');
 
-// Cookies
+// Cookies (keeping for other purposes, not sessions)
 app.use(cookieParser(process.env.COOKIE_SECRET))
 
-// Sessions
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-  store: MongoStore.create({
-    mongoUrl: MONGO_URI,
-    ttl: 3600,
-    autoRemove: 'native'
-  })
-}))
-
-
+// Passport middleware
+app.use(passport.initialize());
 
 mongoose.connect(MONGO_URI, {})
 .then(() => {
@@ -48,20 +37,15 @@ mongoose.connect(MONGO_URI, {})
   console.log(err);
 });
 
+// Cookie examples (keeping for reference)
 app.get('/set-cookies', (req, res) => {
-  // Set a cookie with the name 'user' and the value 'adrian'
-  // The cookie is signed and httpOnly
   res.cookie('user', 'adrian', { signed: true, httpOnly: true });
-  // Send a response with the message 'Signed cookie set'
   res.cookie('location', 'Argentina', {});
   res.send('Signed and not signed cookies set');
 });
 
 app.get('/get-cookies', (req, res) => {
-  // Cookies that have not been signed
   console.log('Cookies: ', req.cookies)
-
-  // Cookies that have been signed
   console.log('Signed Cookies: ', req.signedCookies)
   res.send({
     cookies: req.cookies,
@@ -75,72 +59,29 @@ app.get('/delete-cookies', (req, res) => {
   res.send('Cookies deleted');
 });
 
-app.get('/session', (req, res) => {
-  req.session.user = req.signedCookies.user || 'anonymous';
-  req.session.location = req.cookies.location || 'unknown';
-  // res.send('Session set');
-  if (req.session.counter) {
-    req.session.counter++;
-  } else {
-    req.session.counter = 1;
-  }
-  console.log(req.session);
-  res.send(`Session: ${req.session.counter}, user: ${req.session.user}, location: ${req.session.location}`);
-});
-
-app.get('/remove-admin', (req, res) => {
-  delete req.session.admin;
-  res.send('Admin property removed from session');
-});
-
-// app.get('/login', (req, res) => {
-//   const { username, password } = req.query;
-//   if (username === 'admin' && password === '123456') {
-//     req.session.user = username;
-//     req.session.admin = true;
-//     res.cookie('user', username, { signed: true, httpOnly: true });
-//     res.cookie('location', 'Argentina', {});
-//     res.send('Login successful');
-//   } else {
-//     delete req.session.admin;
-//     res.send('Login failed');
-//   }
-// });
-
+// Admin route with JWT authentication
 function auth(req, res, next) {
-  console.log(req.session);
-  if (req.session?.admin && ADMIN_USERS.includes(req.session?.user)) {
+  if (req.user && ADMIN_USERS.includes(req.user.name)) {
     next();
   } else {
     res.status(401).send('Access denied');
   }
 }
 
-app.get('/admin', auth, (req, res) => {
+app.get('/admin', passport.authenticate('jwt', { session: false }), auth, (req, res) => {
   res.send('Admin page');
-});
-
-app.get('/check-sessions', async (req, res) => {
-  try {
-    const sessions = await mongoose.connection.db.collection('sessions').find().toArray();
-    res.json({
-      totalSessions: sessions.length,
-      sessions: sessions
-    });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
 });
 
 app.get("/", (req, res) => {    
   res.render('home')
 });
 
-// app.use("/api/users", usersRouter);
+// API routes
+app.use("/api/auth", authRouter);
+app.use("/api/users", usersRouter);
 
-// Mount the sessions router at the root level for profile and login routes
-app.use('/', sessionsRouter)
-app.use('/lab', viewsRouter)
+// View routes
+app.use('/users', viewsRouter)
 
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
