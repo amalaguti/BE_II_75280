@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cookie Security Test</title>
+</head>
+<body>
+    <h1>Cookie Security Test</h1>
+    
+    <h2>1. Regular Cookie (Vulnerable to XSS)</h2>
+    <button onclick="setRegularCookie()">Set Regular Cookie</button>
+    <button onclick="readRegularCookie()">Read Regular Cookie</button>
+    <div id="regular-result"></div>
+    
+    <h2>2. httpOnly Cookie (Protected from XSS)</h2>
+    <button onclick="setHttpOnlyCookie()">Set httpOnly Cookie</button>
+    <button onclick="readHttpOnlyCookie()">Try to Read httpOnly Cookie</button>
+    <div id="httponly-result"></div>
+    
+    <h2>3. All Cookies (What JavaScript Can See)</h2>
+    <button onclick="showAllCookies()">Show All Cookies</button>
+    <div id="all-cookies"></div>
+
+    <script>
+        function setRegularCookie() {
+            document.cookie = "regular_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c";
+            document.getElementById('regular-result').innerHTML = '<p style="color: green;">✅ Regular cookie set successfully!</p>';
+        }
+        
+        function readRegularCookie() {
+            const cookies = document.cookie.split(';');
+            const tokenCookie = cookies.find(c => c.trim().startsWith('regular_token='));
+            if (tokenCookie) {
+                const token = tokenCookie.split('=')[1];
+                document.getElementById('regular-result').innerHTML = 
+                    `<p style="color: red;">❌ VULNERABLE: Token stolen: ${token.substring(0, 20)}...</p>`;
+            } else {
+                document.getElementById('regular-result').innerHTML = '<p>No regular cookie found</p>';
+            }
+        }
+        
+        function setHttpOnlyCookie() {
+            // This will fail - JavaScript cannot set httpOnly cookies
+            try {
+                document.cookie = "httponly_token=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c; httpOnly";
+                document.getElementById('httponly-result').innerHTML = '<p style="color: green;">✅ httpOnly cookie set (but this is fake - only server can set real httpOnly)</p>';
+            } catch (error) {
+                document.getElementById('httponly-result').innerHTML = '<p style="color: orange;">⚠️ Cannot set httpOnly cookie from JavaScript</p>';
+            }
+        }
+        
+        function readHttpOnlyCookie() {
+            const cookies = document.cookie.split(';');
+            const tokenCookie = cookies.find(c => c.trim().startsWith('httponly_token='));
+            if (tokenCookie) {
+                const token = tokenCookie.split('=')[1];
+                document.getElementById('httponly-result').innerHTML = 
+                    `<p style="color: red;">❌ This is NOT a real httpOnly cookie: ${token.substring(0, 20)}...</p>`;
+            } else {
+                document.getElementById('httponly-result').innerHTML = 
+                    '<p style="color: green;">✅ SECURE: Real httpOnly cookies are invisible to JavaScript!</p>';
+            }
+        }
+        
+        function showAllCookies() {
+            const cookies = document.cookie;
+            document.getElementById('all-cookies').innerHTML = 
+                `<p><strong>All cookies JavaScript can see:</strong></p>
+                 <pre>${cookies || 'No cookies visible to JavaScript'}</pre>
+                 <p><em>Note: httpOnly cookies set by the server are NOT visible here!</em></p>`;
+        }
+    </script>
+</body>
+</html> 

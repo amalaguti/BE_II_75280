@@ -3,7 +3,10 @@ import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { verifyToken } from '../utils/jwt.js';
 
 const options = {
-  jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+  jwtFromRequest: (req) => {
+    // Extract JWT from httpOnly cookie
+    return req.cookies.jwt_token;
+  },
   secretOrKey: process.env.JWT_SECRET || 'your-secret-key',
   passReqToCallback: true
 };

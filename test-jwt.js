@@ -1,10 +1,10 @@
-// Test script for JWT authentication
+// Test script for JWT authentication with cookies
 // Run with: node test-jwt.js
 
 const BASE_URL = 'http://localhost:8080';
 
 async function testAuth() {
-  console.log('🧪 Testing JWT Authentication...\n');
+  console.log('🧪 Testing JWT Authentication with Cookies...\n');
 
   // Test 1: Register a new user
   console.log('1. Testing user registration...');
@@ -27,15 +27,13 @@ async function testAuth() {
     
     if (registerResponse.ok) {
       console.log('✅ Registration successful');
-      console.log('Token:', registerData.token.substring(0, 20) + '...');
       console.log('User:', registerData.user);
+      console.log('Cookies set:', registerResponse.headers.get('set-cookie') ? 'Yes' : 'No');
       
-      // Test 2: Get profile with token
-      console.log('\n2. Testing profile access with token...');
+      // Test 2: Get profile with cookies
+      console.log('\n2. Testing profile access with cookies...');
       const profileResponse = await fetch(`${BASE_URL}/api/auth/profile`, {
-        headers: {
-          'Authorization': `Bearer ${registerData.token}`
-        }
+        credentials: 'include' // Include cookies
       });
 
       const profileData = await profileResponse.json();
@@ -57,14 +55,16 @@ async function testAuth() {
         body: JSON.stringify({
           email: 'test@example.com',
           password: 'password123'
-        })
+        }),
+        credentials: 'include'
       });
 
       const loginData = await loginResponse.json();
       
       if (loginResponse.ok) {
         console.log('✅ Login successful');
-        console.log('Token:', loginData.token.substring(0, 20) + '...');
+        console.log('User:', loginData.user);
+        console.log('Cookies set:', loginResponse.headers.get('set-cookie') ? 'Yes' : 'No');
       } else {
         console.log('❌ Login failed:', loginData);
       }
@@ -77,22 +77,22 @@ async function testAuth() {
     console.error('❌ Test failed:', error.message);
   }
 
-  // Test 4: Try to access profile without token
-  console.log('\n4. Testing profile access without token...');
+  // Test 4: Try to access profile without cookies
+  console.log('\n4. Testing profile access without cookies...');
   try {
-    const noTokenResponse = await fetch(`${BASE_URL}/api/auth/profile`);
-    const noTokenData = await noTokenResponse.json();
+    const noCookieResponse = await fetch(`${BASE_URL}/api/auth/profile`);
+    const noCookieData = await noCookieResponse.json();
     
-    if (noTokenResponse.status === 401) {
+    if (noCookieResponse.status === 401) {
       console.log('✅ Unauthorized access correctly blocked');
     } else {
-      console.log('❌ Unauthorized access not blocked:', noTokenData);
+      console.log('❌ Unauthorized access not blocked:', noCookieData);
     }
   } catch (error) {
     console.error('❌ Test failed:', error.message);
   }
 
-  console.log('\n🏁 JWT Authentication tests completed!');
+  console.log('\n🏁 JWT Authentication with Cookies tests completed!');
 }
 
 // Run the tests

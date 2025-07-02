@@ -6,9 +6,10 @@ This project has been refactored to use **JSON Web Tokens (JWT)** with **Passpor
 
 - **JWT-based authentication** using Passport.js
 - **Password hashing** with bcryptjs
-- **Token-based API endpoints**
-- **Client-side token storage** in localStorage
+- **Secure httpOnly cookies** for token storage
 - **Automatic token validation** on protected routes
+- **XSS protection** with httpOnly cookies
+- **CSRF protection** with sameSite cookies
 
 ## 📁 Project Structure
 
@@ -155,7 +156,8 @@ COOKIE_SECRET=your-cookie-secret
 ### JWT Settings
 - **Expiration**: 24 hours
 - **Algorithm**: HS256
-- **Token Storage**: localStorage (client-side)
+- **Token Storage**: httpOnly cookies (server-side)
+- **Security**: XSS and CSRF protected
 
 ## 🧪 Testing
 
@@ -170,15 +172,16 @@ node test-jwt.js
 - ❌ Removed `express-session` and `connect-mongo`
 - ✅ Added `passport`, `passport-jwt`, `jsonwebtoken`, `bcryptjs`
 - ❌ Removed session-based authentication
-- ✅ Added JWT-based authentication
+- ✅ Added JWT-based authentication with httpOnly cookies
 - ❌ Removed server-side session storage
-- ✅ Added client-side token storage
+- ✅ Added secure cookie-based token storage
 
 ### Benefits
 - **Stateless**: No server-side session storage needed
 - **Scalable**: Works across multiple server instances
-- **Mobile-friendly**: Easy to implement in mobile apps
-- **API-first**: Perfect for REST APIs and SPAs
+- **Secure**: XSS and CSRF protection with httpOnly cookies
+- **Automatic**: Cookies sent with every request automatically
+- **Production-ready**: Secure by default
 
 ## 🚀 Getting Started
 
@@ -209,8 +212,9 @@ node test-jwt.js
 
 ## 🔒 Security Notes
 
-- JWT tokens are stored in localStorage (consider httpOnly cookies for production)
+- JWT tokens are stored in httpOnly cookies (XSS protected)
 - Passwords are hashed using bcryptjs with salt rounds of 10
 - JWT tokens expire after 24 hours
-- Always use HTTPS in production
+- CSRF protection enabled with sameSite cookies
+- Always use HTTPS in production (set secure: true)
 - Consider implementing token refresh mechanism for production use 

@@ -180,17 +180,11 @@
         const data = await response.json();
         
         if (response.ok) {
-          // Store token in localStorage
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('user', JSON.stringify(data.user));
-          
           successDiv.textContent = 'Registro exitoso! Redirigiendo...';
           successDiv.style.display = 'block';
           
-          // Redirect to profile
-          setTimeout(() => {
-            window.location.href = '/users/profile';
-          }, 1000);
+          // Redirect to profile immediately
+          window.location.href = '/users/profile';
         } else {
           errorDiv.textContent = data.error || 'Error en el registro';
           errorDiv.style.display = 'block';

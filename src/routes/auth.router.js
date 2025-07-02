@@ -53,9 +53,17 @@ router.post('/register', async (req, res) => {
     // Generate JWT token
     const token = generateToken(newUser);
 
+    // Set JWT token in httpOnly cookie
+    res.cookie('jwt_token', token, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/'
+    });
+
     res.status(201).json({
       message: 'Usuario registrado exitosamente',
-      token,
       user: {
         id: newUser.id,
         name: newUser.first_name,
@@ -96,9 +104,17 @@ router.post('/login', async (req, res) => {
     // Generate JWT token
     const token = generateToken(user);
 
+    // Set JWT token in httpOnly cookie
+    res.cookie('jwt_token', token, {
+      httpOnly: true,
+      secure: false, // Set to true in production with HTTPS
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      path: '/'
+    });
+
     res.json({
       message: 'Login exitoso',
-      token,
       user: {
         id: user.id,
         name: user.first_name,
@@ -121,8 +137,16 @@ router.get('/profile', authenticateJWT, (req, res) => {
   });
 });
 
-// Logout (client-side token removal)
+// Logout (clear cookie)
 router.post('/logout', (req, res) => {
+  // Clear the JWT cookie
+  res.clearCookie('jwt_token', {
+    httpOnly: true,
+    secure: false,
+    sameSite: 'strict',
+    path: '/'
+  });
+  
   res.json({
     message: 'Logout exitoso'
   });
