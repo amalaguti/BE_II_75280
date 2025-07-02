@@ -10,9 +10,12 @@ router.get('/', (req, res) => {
 
 router.get('/login', optionalAuth, (req, res) => {
   console.log('Login page')
-  // If user is already logged in, redirect to current user page
+  // If user is already logged in, show message instead of redirecting
   if (req.user) {
-    return res.redirect('/users/current')
+    return res.render('login', { 
+      loggedInUser: req.user,
+      showLoggedInMessage: true 
+    })
   }
   res.render('login')
 })

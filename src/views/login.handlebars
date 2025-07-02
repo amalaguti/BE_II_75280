@@ -98,22 +98,93 @@
     a:hover {
       text-decoration: underline;
     }
+
+    .logged-in-message {
+      text-align: center;
+      padding: 2rem;
+      background-color: #e8f4fd;
+      border: 1px solid #bee5eb;
+      border-radius: 8px;
+      margin-bottom: 1rem;
+    }
+
+    .logged-in-message h3 {
+      color: #0c5460;
+      margin-bottom: 1rem;
+    }
+
+    .logged-in-message p {
+      color: #0c5460;
+      margin-bottom: 0.5rem;
+    }
+
+    .logged-in-actions {
+      margin-top: 1.5rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    .btn-primary, .btn-secondary {
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      text-decoration: none;
+      font-weight: 500;
+      transition: all 0.3s;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+    }
+
+    .btn-primary {
+      background-color: #4a90e2;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background-color: #357ab8;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+      color: white;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
   </style>
 </head>
 <body>
   <div class="login-container">
     <h2>Iniciar sesión</h2>
-    <div id="error-message" class="error-message"></div>
-    <div id="success-message" class="success-message"></div>
-    <form id="login-form">
-      <input type="email" name="email" placeholder="Email" required />
-      <input type="password" name="password" placeholder="Contraseña" required />
-      <button type="submit" id="login-btn">Entrar</button>
-    </form>
-    <a href="/users/register">¿No tenés cuenta? Registrate</a>
+    
+    {{#if showLoggedInMessage}}
+      <div class="logged-in-message">
+        <h3>Ya estás logueado</h3>
+        <p>Hola <strong>{{loggedInUser.name}}</strong>, ya tienes una sesión activa.</p>
+        <p>Si quieres iniciar sesión con otra cuenta, primero debes cerrar sesión.</p>
+        <div class="logged-in-actions">
+          <a href="/users/current" class="btn-primary">Ir a mi perfil</a>
+          <button id="logout-btn" class="btn-secondary">Cerrar sesión</button>
+        </div>
+      </div>
+    {{else}}
+      <div id="error-message" class="error-message"></div>
+      <div id="success-message" class="success-message"></div>
+      <form id="login-form">
+        <input type="email" name="email" placeholder="Email" required />
+        <input type="password" name="password" placeholder="Contraseña" required />
+        <button type="submit" id="login-btn">Entrar</button>
+      </form>
+      <a href="/users/register">¿No tenés cuenta? Registrate</a>
+    {{/if}}
   </div>
 
   <script>
+    {{#unless showLoggedInMessage}}
+    // Login form handling (only when user is not logged in)
     document.getElementById('login-form').addEventListener('submit', async (e) => {
       e.preventDefault();
       
@@ -169,6 +240,28 @@
         loginBtn.textContent = 'Entrar';
       }
     });
+    {{/unless}}
+
+    {{#if showLoggedInMessage}}
+    // Handle logout button for logged-in users (only if it exists)
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        try {
+          await fetch('/api/auth/logout', {
+            method: 'POST'
+          });
+        } catch (error) {
+          console.error('Logout error:', error);
+        } finally {
+          // Redirect to login page (which will now show the login form)
+          window.location.href = '/users/login';
+        }
+      });
+    }
+    {{/if}}
   </script>
 </body>
 </html>
