@@ -132,7 +132,8 @@
       </div>
       <div class="form-group">
         <label for="age">Edad</label>
-        <input type="number" id="age" name="age" min="18" required />
+        <input type="number" id="age" name="age" min="18" max="120" required />
+        <small style="color: #666; font-size: 0.8rem;">La edad debe estar entre 18 y 120 años</small>
       </div>
       <div class="form-group">
         <label for="password">Contraseña</label>
@@ -150,11 +151,22 @@
       e.preventDefault();
       
       const formData = new FormData(e.target);
+      const age = parseInt(formData.get('age'));
+      
+      // Client-side validation
+      if (age < 18 || age > 120) {
+        errorDiv.textContent = 'La edad debe estar entre 18 y 120 años';
+        errorDiv.style.display = 'block';
+        registerBtn.disabled = false;
+        registerBtn.textContent = 'Registrarse';
+        return;
+      }
+      
       const userData = {
         first_name: formData.get('first_name'),
         last_name: formData.get('last_name'),
         email: formData.get('email'),
-        age: parseInt(formData.get('age')),
+        age: age,
         password: formData.get('password')
       };
       

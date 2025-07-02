@@ -2,18 +2,9 @@ import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import { generateToken } from '../utils/jwt.js';
 import { authenticateJWT } from '../middleware/auth.js';
+import userModel from '../models/user.model.js';
 
 const router = Router();
-
-// In-memory user storage (replace with database in production)
-const users = [{
-  id: '1',
-  first_name: 'Adrian',
-  last_name: 'Malaguti',
-  email: 'admin@local',
-  age: 25,
-  password: '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi' // "password" hashed
-}];
 
 // Register endpoint
 router.post('/register', async (req, res) => {
@@ -27,8 +18,16 @@ router.post('/register', async (req, res) => {
       });
     }
 
+    // Validate age
+    const ageNum = parseInt(age);
+    if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) {
+      return res.status(400).json({
+        error: 'La edad debe estar entre 18 y 120 años'
+      });
+    }
+
     // Check if email already exists
-    const existingUser = users.find(u => u.email === email);
+    const existingUser = await userModel.findOne({ email: email.toLowerCase() });
     if (existingUser) {
       return res.status(400).json({
         error: 'El email ya está registrado'
@@ -38,17 +37,16 @@ router.post('/register', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new user
-    const newUser = {
-      id: (users.length + 1).toString(),
+    // Create new user in MongoDB
+    const newUser = new userModel({
       first_name,
       last_name,
-      email,
-      age: parseInt(age),
+      email: email.toLowerCase(),
+      age: ageNum,
       password: hashedPassword
-    };
+    });
     
-    users.push(newUser);
+    await newUser.save();
 
     // Generate JWT token
     const token = generateToken(newUser);
@@ -65,7 +63,7 @@ router.post('/register', async (req, res) => {
     res.status(201).json({
       message: 'Usuario registrado exitosamente',
       user: {
-        id: newUser.id,
+        id: newUser._id,
         name: newUser.first_name,
         email: newUser.email
       }
@@ -73,6 +71,22 @@ router.post('/register', async (req, res) => {
 
   } catch (error) {
     console.error('Registration error:', error);
+    
+    // Handle MongoDB duplicate key error
+    if (error.code === 11000) {
+      return res.status(400).json({
+        error: 'El email ya está registrado'
+      });
+    }
+    
+    // Handle MongoDB validation errors
+    if (error.name === 'ValidationError') {
+      const validationErrors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        error: validationErrors.join(', ')
+      });
+    }
+    
     res.status(500).json({
       error: 'Error interno del servidor'
     });
@@ -84,8 +98,8 @@ router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Find user by email
-    const user = users.find(u => u.email === email);
+    // Find user by email in MongoDB
+    const user = await userModel.findOne({ email: email.toLowerCase() });
     
     if (!user) {
       return res.status(401).json({
@@ -116,7 +130,7 @@ router.post('/login', async (req, res) => {
     res.json({
       message: 'Login exitoso',
       user: {
-        id: user.id,
+        id: user._id,
         name: user.first_name,
         email: user.email
       }
@@ -131,10 +145,34 @@ router.post('/login', async (req, res) => {
 });
 
 // Get current user profile
-router.get('/profile', authenticateJWT, (req, res) => {
-  res.json({
-    user: req.user
-  });
+router.get('/profile', authenticateJWT, async (req, res) => {
+  try {
+    // Fetch fresh user data from MongoDB
+    const user = await userModel.findById(req.user.id).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({
+        error: 'Usuario no encontrado'
+      });
+    }
+
+    res.json({
+      user: {
+        id: user._id,
+        name: user.first_name,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+        age: user.age,
+        created_at: user.created_at
+      }
+    });
+  } catch (error) {
+    console.error('Profile error:', error);
+    res.status(500).json({
+      error: 'Error interno del servidor'
+    });
+  }
 });
 
 // Logout (clear cookie)

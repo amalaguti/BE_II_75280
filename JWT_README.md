@@ -6,6 +6,7 @@ This project has been refactored to use **JSON Web Tokens (JWT)** with **Passpor
 
 - **JWT-based authentication** using Passport.js
 - **Password hashing** with bcryptjs
+- **MongoDB integration** for persistent user storage
 - **Secure httpOnly cookies** for token storage
 - **Automatic token validation** on protected routes
 - **XSS protection** with httpOnly cookies
@@ -193,19 +194,26 @@ node test-jwt.js
 2. **Set environment variables**:
    ```bash
    export JWT_SECRET=your-secret-key
+   export MONGODB_USER=your-mongodb-user
+   export MONGODB_PASS=your-mongodb-password
    ```
 
-3. **Start the server**:
+3. **Seed the database** (optional):
+   ```bash
+   node seed-database.js
+   ```
+
+4. **Start the server**:
    ```bash
    npm start
    ```
 
-4. **Test the API**:
+5. **Test the API**:
    ```bash
    node test-jwt.js
    ```
 
-5. **Access the web interface**:
+6. **Access the web interface**:
    - Login: http://localhost:8080/users
    - Register: http://localhost:8080/users/register
    - Profile: http://localhost:8080/users/profile (after login)

@@ -1,6 +1,7 @@
 import passport from 'passport';
 import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
 import { verifyToken } from '../utils/jwt.js';
+import userModel from '../models/user.model.js';
 
 const options = {
   jwtFromRequest: (req) => {
@@ -13,16 +14,15 @@ const options = {
 
 passport.use(new JwtStrategy(options, async (req, payload, done) => {
   try {
-    // For now, we'll use the payload directly since we're not using a database
-    // In a real app, you'd fetch the user from the database using payload.id
-    const user = {
-      id: payload.id,
-      email: payload.email,
-      name: payload.name
-    };
+    // Fetch user from MongoDB using the ID from JWT payload
+    const user = await userModel.findById(payload.id).select('-password');
     
     if (user) {
-      return done(null, user);
+      return done(null, {
+        id: user._id,
+        email: user.email,
+        name: user.first_name
+      });
     } else {
       return done(null, false);
     }
