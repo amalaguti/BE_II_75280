@@ -47,9 +47,10 @@ src/
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| `GET` | `/users` | Login page |
+| `GET` | `/users` | Redirects to `/users/login` |
+| `GET` | `/users/login` | Login page |
 | `GET` | `/users/register` | Registration page |
-| `GET` | `/users/profile` | Profile page (protected) |
+| `GET` | `/users/current` | Current user page (protected) |
 
 ## 🔐 Authentication Flow
 
@@ -214,9 +215,10 @@ node test-jwt.js
    ```
 
 6. **Access the web interface**:
-   - Login: http://localhost:8080/users
+   - Home: http://localhost:8080/
+   - Login: http://localhost:8080/users/login
    - Register: http://localhost:8080/users/register
-   - Profile: http://localhost:8080/users/profile (after login)
+   - Current User: http://localhost:8080/users/current (after login)
 
 ## 🔒 Security Notes
 
