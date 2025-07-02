@@ -150,11 +150,9 @@
     
     if (!token || !user.id) {
       window.location.href = '/users';
-      exit;
-    }
-
-    // Load profile data
-    async function loadProfile() {
+    } else {
+      // Load profile data
+      async function loadProfile() {
       try {
         const response = await fetch('/api/auth/profile', {
           headers: {
@@ -180,39 +178,40 @@
       }
     }
 
-    function displayProfile(userData) {
-      document.getElementById('loading').style.display = 'none';
-      document.getElementById('profile-content').style.display = 'block';
-      
-      document.getElementById('user-name').textContent = `Bienvenido, ${userData.name}!`;
-      document.getElementById('user-email').textContent = userData.email;
-      document.getElementById('user-name-info').textContent = userData.name;
-      document.getElementById('user-email-info').textContent = userData.email;
-    }
-
-    // Logout functionality
-    document.getElementById('logout-btn').addEventListener('click', async (e) => {
-      e.preventDefault();
-      
-      try {
-        await fetch('/api/auth/logout', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-      } catch (error) {
-        console.error('Logout error:', error);
-      } finally {
-        // Always clear local storage and redirect
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        window.location.href = '/users';
+      function displayProfile(userData) {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('profile-content').style.display = 'block';
+        
+        document.getElementById('user-name').textContent = `Bienvenido, ${userData.name}!`;
+        document.getElementById('user-email').textContent = userData.email;
+        document.getElementById('user-name-info').textContent = userData.name;
+        document.getElementById('user-email-info').textContent = userData.email;
       }
-    });
 
-    // Load profile on page load
-    loadProfile();
+      // Logout functionality
+      document.getElementById('logout-btn').addEventListener('click', async (e) => {
+        e.preventDefault();
+        
+        try {
+          await fetch('/api/auth/logout', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          });
+        } catch (error) {
+          console.error('Logout error:', error);
+        } finally {
+          // Always clear local storage and redirect
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          window.location.href = '/users';
+        }
+      });
+
+      // Load profile on page load
+      loadProfile();
+    }
   </script>
 </body>
 </html>

@@ -13,12 +13,9 @@ router.get('/register', optionalAuth, (req, res) => {
   res.render('register')
 })
 
-router.get('/profile', optionalAuth, (req, res) => {
+router.get('/profile', (req, res) => {
   console.log('Profile page')
-  if (!req.user) {
-    return res.redirect('/users')
-  }
-  res.render('profile', { user: req.user })
+  res.render('profile')
 })
 
 export default router

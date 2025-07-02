@@ -150,15 +150,22 @@
           successDiv.textContent = 'Login exitoso! Redirigiendo...';
           successDiv.style.display = 'block';
           
-          // Redirect to profile
-          setTimeout(() => {
+          console.log('Login successful, redirecting to profile...');
+          
+          // Redirect to profile immediately
+          try {
             window.location.href = '/users/profile';
-          }, 1000);
+          } catch (redirectError) {
+            console.error('Redirect error:', redirectError);
+            // Fallback redirect
+            window.location.replace('/users/profile');
+          }
         } else {
           errorDiv.textContent = data.error || 'Error en el login';
           errorDiv.style.display = 'block';
         }
       } catch (error) {
+        console.error('Login error:', error);
         errorDiv.textContent = 'Error de conexión';
         errorDiv.style.display = 'block';
       } finally {
