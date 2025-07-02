@@ -5,29 +5,29 @@ const router = Router()
 
 router.get('/', optionalAuth, (req, res) => {
   console.log('Login page')
-  // If user is already logged in, redirect to profile
+  // If user is already logged in, redirect to current user page
   if (req.user) {
-    return res.redirect('/users/profile')
+    return res.redirect('/users/current')
   }
   res.render('login')
 })
 
 router.get('/register', optionalAuth, (req, res) => {
   console.log('Register page')
-  // If user is already logged in, redirect to profile
+  // If user is already logged in, redirect to current user page
   if (req.user) {
-    return res.redirect('/users/profile')
+    return res.redirect('/users/current')
   }
   res.render('register')
 })
 
-router.get('/profile', optionalAuth, (req, res) => {
-  console.log('Profile page')
+router.get('/current', optionalAuth, (req, res) => {
+  console.log('Current page')
   // If user is not logged in, redirect to login
   if (!req.user) {
     return res.redirect('/users')
   }
-  res.render('profile', { user: req.user })
+  res.render('current', { user: req.user })
 })
 
 export default router

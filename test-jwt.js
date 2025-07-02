@@ -29,7 +29,7 @@ async function testAuth() {
       console.log('✅ Registration successful');
       console.log('User:', registerData.user);
       console.log('MongoDB ID:', registerData.user.id);
-      console.log('Cookies set:', registerResponse.headers.get('set-cookie') ? 'Yes' : 'No');
+      console.log('Cookies set:', registerResponse.headers.get('set-cookie') && registerResponse.headers.get('set-cookie').includes('currentUser') ? 'Yes' : 'No');
       
       // Test 2: Get profile with cookies
       console.log('\n2. Testing profile access with cookies...');
@@ -75,7 +75,7 @@ async function testAuth() {
         console.log('✅ Login successful');
         console.log('User:', loginData.user);
         console.log('MongoDB ID:', loginData.user.id);
-        console.log('Cookies set:', loginResponse.headers.get('set-cookie') ? 'Yes' : 'No');
+        console.log('Cookies set:', loginResponse.headers.get('set-cookie') && loginResponse.headers.get('set-cookie').includes('currentUser') ? 'Yes' : 'No');
       } else {
         console.log('❌ Login failed:', loginData);
       }

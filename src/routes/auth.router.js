@@ -52,7 +52,7 @@ router.post('/register', async (req, res) => {
     const token = generateToken(newUser);
 
     // Set JWT token in httpOnly cookie
-    res.cookie('jwt_token', token, {
+    res.cookie('currentUser', token, {
       httpOnly: true,
       secure: false, // Set to true in production with HTTPS
       sameSite: 'strict',
@@ -119,7 +119,7 @@ router.post('/login', async (req, res) => {
     const token = generateToken(user);
 
     // Set JWT token in httpOnly cookie
-    res.cookie('jwt_token', token, {
+    res.cookie('currentUser', token, {
       httpOnly: true,
       secure: false, // Set to true in production with HTTPS
       sameSite: 'strict',
@@ -178,7 +178,7 @@ router.get('/profile', authenticateJWT, async (req, res) => {
 // Logout (clear cookie)
 router.post('/logout', (req, res) => {
   // Clear the JWT cookie
-  res.clearCookie('jwt_token', {
+  res.clearCookie('currentUser', {
     httpOnly: true,
     secure: false,
     sameSite: 'strict',

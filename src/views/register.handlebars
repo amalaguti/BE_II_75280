@@ -195,8 +195,8 @@
           successDiv.textContent = 'Registro exitoso! Redirigiendo...';
           successDiv.style.display = 'block';
           
-          // Redirect to profile immediately
-          window.location.href = '/users/profile';
+          // Redirect to current user page immediately
+          window.location.href = '/users/current';
         } else {
           errorDiv.textContent = data.error || 'Error en el registro';
           errorDiv.style.display = 'block';

@@ -157,7 +157,7 @@ COOKIE_SECRET=your-cookie-secret
 ### JWT Settings
 - **Expiration**: 24 hours
 - **Algorithm**: HS256
-- **Token Storage**: httpOnly cookies (server-side)
+- **Token Storage**: httpOnly cookies (server-side, named 'currentUser')
 - **Security**: XSS and CSRF protected
 
 ## 🧪 Testing
@@ -226,3 +226,14 @@ node test-jwt.js
 - CSRF protection enabled with sameSite cookies
 - Always use HTTPS in production (set secure: true)
 - Consider implementing token refresh mechanism for production use 
+
+// Server sets secure cookie
+res.cookie('currentUser', token, { httpOnly: true });
+
+// Passport extracts token from cookies
+jwtFromRequest: (req) => {
+  return req.cookies.currentUser; // Server can read it
+}
+
+// This will NOT show the JWT token
+console.log(document.cookie); // JWT token is hidden! 

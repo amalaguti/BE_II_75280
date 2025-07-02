@@ -146,15 +146,15 @@
           successDiv.textContent = 'Login exitoso! Redirigiendo...';
           successDiv.style.display = 'block';
           
-          console.log('Login successful, redirecting to profile...');
+          console.log('Login successful, redirecting to current user page...');
           
-          // Redirect to profile immediately
+          // Redirect to current user page immediately
           try {
-            window.location.href = '/users/profile';
+            window.location.href = '/users/current';
           } catch (redirectError) {
             console.error('Redirect error:', redirectError);
             // Fallback redirect
-            window.location.replace('/users/profile');
+            window.location.replace('/users/current');
           }
         } else {
           errorDiv.textContent = data.error || 'Error en el login';

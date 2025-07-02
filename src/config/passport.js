@@ -6,7 +6,7 @@ import userModel from '../models/user.model.js';
 const options = {
   jwtFromRequest: (req) => {
     // Extract JWT from httpOnly cookie
-    return req.cookies.jwt_token;
+    return req.cookies.currentUser;
   },
   secretOrKey: process.env.JWT_SECRET || 'your-secret-key',
   passReqToCallback: true
