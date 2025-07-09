@@ -105,6 +105,31 @@
       background-color: #f8d7da;
       border-radius: 8px;
     }
+
+    .role-badge {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .role-user {
+      background-color: #e3f2fd;
+      color: #1976d2;
+    }
+
+    .role-admin {
+      background-color: #ffebee;
+      color: #d32f2f;
+    }
+
+    .role-premium {
+      background-color: #fff3e0;
+      color: #f57c00;
+    }
   </style>
 </head>
 <body>
@@ -137,6 +162,14 @@
       <div class="info-item">
         <h3>Edad</h3>
         <p>{{user.age}} años</p>
+      </div>
+      <div class="info-item">
+        <h3>Rol</h3>
+        <p><span class="role-badge role-{{user.role}}">{{user.role}}</span></p>
+      </div>
+      <div class="info-item">
+        <h3>Carrito ID</h3>
+        <p>{{#if user.cart}}{{user.cart}}{{else}}Sin carrito asignado{{/if}}</p>
       </div>
     </div>
   </main>

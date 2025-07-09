@@ -23,7 +23,9 @@ passport.use(new JwtStrategy(options, async (req, payload, done) => {
         email: user.email,
         name: user.first_name,
         last_name: user.last_name,
-        age: user.age
+        age: user.age,
+        role: user.role,
+        cart: user.cart
       });
     } else {
       return done(null, false);
