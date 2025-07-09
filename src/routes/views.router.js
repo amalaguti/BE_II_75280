@@ -1,5 +1,6 @@
 import { Router } from 'express'
 import { optionalAuth } from '../middleware/auth.js'
+import userModel from '../models/user.model.js'
 
 const router = Router()
 
@@ -29,13 +30,40 @@ router.get('/register', optionalAuth, (req, res) => {
   res.render('register')
 })
 
-router.get('/current', optionalAuth, (req, res) => {
+router.get('/current', optionalAuth, async (req, res) => {
   console.log('Current page')
   // If user is not logged in, redirect to login
   if (!req.user) {
     return res.redirect('/users/login')
   }
-  res.render('current', { user: req.user })
+  
+  try {
+    // Fetch fresh user data from database (same as /api/sessions/current)
+    const user = await userModel.findById(req.user.id).select('-password');
+    
+    if (!user) {
+      return res.redirect('/users/login')
+    }
+    
+    // Format user data to match the API response
+    const userData = {
+      id: user._id,
+      name: user.first_name,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      age: user.age,
+      role: user.role,
+      cart: user.cart,
+      created_at: user.created_at
+    };
+    
+    res.render('current', { user: userData });
+  } catch (error) {
+    console.error('Error fetching user data:', error);
+    // Fallback to passport user data if database query fails
+    res.render('current', { user: req.user });
+  }
 })
 
 export default router

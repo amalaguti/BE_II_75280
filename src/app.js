@@ -1,6 +1,7 @@
 import express, { json, urlencoded } from "express";
 import mongoose from "mongoose";
 import usersRouter from "./routes/users.router.js";
+import sessionsRouter from "./routes/sessions.router.js";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import { engine } from 'express-handlebars';
@@ -79,6 +80,7 @@ app.get("/", (req, res) => {
 // API routes
 app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
+app.use("/api/sessions", sessionsRouter);
 
 // View routes
 app.use('/users', viewsRouter)
