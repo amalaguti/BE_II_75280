@@ -20,16 +20,22 @@ src/
 │   └── passport.js          # Passport JWT strategy configuration
 ├── middleware/
 │   └── auth.js              # JWT authentication middleware
+├── models/
+│   └── user.model.js        # User model with cart and role fields
 ├── routes/
 │   ├── auth.router.js       # Authentication endpoints (login, register, profile)
+│   ├── sessions.router.js   # Session management endpoints
 │   ├── users.router.js      # User CRUD operations
 │   └── views.router.js      # View routes for frontend
 ├── utils/
 │   └── jwt.js               # JWT utility functions
 └── views/                   # Handlebars templates
+    ├── current.handlebars   # User profile page with role badges
+    ├── home.handlebars      # Home page
+    ├── layouts/
+    │   └── main.handlebars  # Main layout template
     ├── login.handlebars     # Login form with AJAX
-    ├── register.handlebars  # Registration form with AJAX
-    └── profile.handlebars   # Profile page with JWT validation
+    └── register.handlebars  # Registration form with AJAX
 ```
 
 ## 🔧 API Endpoints
@@ -42,6 +48,12 @@ src/
 | `POST` | `/api/auth/login` | Login user |
 | `GET` | `/api/auth/profile` | Get user profile (protected) |
 | `POST` | `/api/auth/logout` | Logout user |
+
+### Session Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/api/sessions/current` | Get current session user (protected) |
 
 ### View Endpoints
 
@@ -111,7 +123,13 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
   "user": {
     "id": "2",
     "name": "John", 
-    "email": "john@example.com"
+    "email": "john@example.com",
+    "first_name": "John",
+    "last_name": "Doe",
+    "age": 25,
+    "role": "user",
+    "cart": null,
+    "created_at": "2024-01-01T00:00:00.000Z"
   }
 }
 ```
@@ -197,6 +215,7 @@ node test-jwt.js
    export JWT_SECRET=your-secret-key
    export MONGODB_USER=your-mongodb-user
    export MONGODB_PASS=your-mongodb-password
+   export COOKIE_SECRET=your-cookie-secret
    ```
 
 3. **Seed the database** (optional):
@@ -219,6 +238,33 @@ node test-jwt.js
    - Login: http://localhost:8080/users/login
    - Register: http://localhost:8080/users/register
    - Current User: http://localhost:8080/users/current (after login)
+
+## 🗄️ Enhanced User Model (v1.0)
+
+### New Fields Added:
+- **`cart`**: MongoDB ObjectId reference to shopping cart collection
+- **`role`**: String field with enum values: `['user', 'admin', 'premium']`
+- **Default role**: All new users get `'user'` role by default
+
+### User Model Schema:
+```javascript
+{
+  first_name: String (required, max 100 chars),
+  last_name: String (required, max 100 chars),
+  email: String (required, max 100 chars, unique, lowercase),
+  age: Number (required, min 18, max 120),
+  password: String (required, hashed with bcrypt),
+  cart: ObjectId (reference to 'carts' collection, default null),
+  role: String (enum: ['user', 'admin', 'premium'], default 'user'),
+  created_at: Date (default: Date.now),
+  updated_at: Date (default: Date.now)
+}
+```
+
+### Role-Based Features:
+- **Visual Role Badges**: Different colors for each role (blue for user, red for admin, orange for premium)
+- **Role Validation**: Enum validation ensures only valid roles are assigned
+- **Future-Ready**: Prepared for role-based access control implementation
 
 ## 🔒 Security Notes
 
