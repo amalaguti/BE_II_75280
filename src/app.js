@@ -7,6 +7,7 @@ import sessionsRouter from "./routes/sessions.router.js";
 import cookieParser from "cookie-parser";
 import passport from "passport";
 import { engine } from 'express-handlebars';
+import cors from "cors";
 
 import authRouter from './routes/auth.router.js'
 import viewsRouter from './routes/views.router.js'
@@ -18,6 +19,7 @@ const MONGO_URI = `mongodb+srv://${process.env.MONGODB_USER}:${process.env.MONGO
 
 const app = express();
 
+app.use(cors({ origin: 'http://localhost:8080' })); // Only allow requests from http://localhost:8080
 app.use(json());
 app.use(urlencoded({ extended: true }));
 
