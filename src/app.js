@@ -1,3 +1,5 @@
+import dotenv from 'dotenv';
+dotenv.config();
 import express, { json, urlencoded } from "express";
 import mongoose from "mongoose";
 import usersRouter from "./routes/users.router.js";

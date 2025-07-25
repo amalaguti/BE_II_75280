@@ -2,6 +2,27 @@
 
 A comprehensive Node.js backend application with JWT authentication, MongoDB integration, and role-based access control.
 
+---
+
+**Environment Variables Setup (now using dotenv)**
+
+This project now uses [dotenv](https://www.npmjs.com/package/dotenv) to manage environment variables. You no longer need to use `direnv` or manually export variables in your shell.
+
+1. **Create a `.env` file** in the `BE_II_75280` directory with the following content (example):
+
+```
+MONGODB_USER=your-mongodb-user
+MONGODB_PASS=your-mongodb-password
+COOKIE_SECRET=your-cookie-secret
+SESSION_SECRET=your-session-secret
+JWT_SECRET=your-secret-key
+ADMIN_PASSWORD=your-admin-password
+```
+
+2. **Do not commit your `.env` file to version control.** It is already included in `.gitignore`.
+
+---
+
 ## 🚀 Features
 
 - **JWT Authentication** with Passport.js
@@ -112,7 +133,7 @@ src/
 ### Prerequisites
 - Node.js (v14 or higher)
 - MongoDB Atlas account
-- Environment variables configured
+- **.env file configured (see above)**
 
 ### Installation
 
@@ -127,13 +148,8 @@ src/
    npm install
    ```
 
-3. **Set environment variables**:
-   ```bash
-   export JWT_SECRET=your-secret-key-here
-   export MONGODB_USER=your-mongodb-user
-   export MONGODB_PASS=your-mongodb-password
-   export COOKIE_SECRET=your-cookie-secret
-   ```
+3. **Set environment variables:**
+   - Create a `.env` file as described above. (No need to use `direnv`.)
 
 4. **Seed the database** (optional):
    ```bash

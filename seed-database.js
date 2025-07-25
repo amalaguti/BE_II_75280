@@ -5,6 +5,9 @@
  * Creates an initial admin user for testing
  */
 
+import dotenv from 'dotenv';
+dotenv.config();
+
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 import userModel from './src/models/user.model.js';
