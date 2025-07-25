@@ -90,6 +90,120 @@ src/
 | `GET` | `/users/register` | Registration page |
 | `GET` | `/users/current` | Current user profile page (protected) |
 
+## 🛣️ Route Logic & Usage
+
+### Authentication Routes (`/api/auth`)
+
+#### POST `/api/auth/register`
+- **Purpose:** Register a new user.
+- **Input:** `{ first_name, last_name, email, age, password }` (all required)
+- **Logic:**
+  - Validates all fields are present.
+  - Validates `age` is between 18 and 120.
+  - Checks if the email is already registered (case-insensitive).
+  - Hashes the password with bcryptjs.
+  - Creates a new user in MongoDB.
+  - Generates a JWT token and sets it in an httpOnly cookie (`currentUser`).
+- **Output:**
+  - `201 Created` with `{ message, user: { id, name, email } }` on success.
+  - `400 Bad Request` for missing fields, invalid age, or duplicate email.
+  - `500 Internal Server Error` for unexpected errors.
+
+#### POST `/api/auth/login`
+- **Purpose:** Authenticate a user and start a session.
+- **Input:** `{ email, password }`
+- **Logic:**
+  - Finds user by email (case-insensitive).
+  - Compares password with stored hash using bcryptjs.
+  - On success, generates a JWT token and sets it in an httpOnly cookie (`currentUser`).
+- **Output:**
+  - `200 OK` with `{ message, user: { id, name, email } }` on success.
+  - `401 Unauthorized` for invalid credentials.
+  - `500 Internal Server Error` for unexpected errors.
+
+#### GET `/api/auth/profile`
+- **Purpose:** Get the authenticated user's profile.
+- **Auth:** Requires valid JWT (httpOnly cookie).
+- **Logic:**
+  - Fetches user from MongoDB by ID (from JWT).
+  - Excludes password from the result.
+- **Output:**
+  - `200 OK` with `{ user: { ...fields } }` on success.
+  - `404 Not Found` if user does not exist.
+  - `401 Unauthorized` if not authenticated.
+
+#### POST `/api/auth/logout`
+- **Purpose:** Log out the user.
+- **Logic:**
+  - Clears the `currentUser` httpOnly cookie.
+- **Output:**
+  - `200 OK` with `{ message }`.
+
+---
+
+### User Routes (`/api/users`)
+
+#### GET `/api/users`
+- **Purpose:** Get all users.
+- **Logic:**
+  - Fetches all users from MongoDB.
+- **Output:**
+  - `200 OK` with array of user objects.
+  - `500 Internal Server Error` for DB errors.
+
+#### POST `/api/users`
+- **Purpose:** Create a new user (basic, not for registration).
+- **Input:** `{ first_name, last_name, email }` (all required)
+- **Logic:**
+  - Validates required fields.
+  - Creates a new user in MongoDB.
+- **Output:**
+  - `201 Created` with user object.
+  - `400 Bad Request` for missing fields.
+  - `500 Internal Server Error` for DB errors.
+
+#### PUT `/api/users/:uid`
+- **Purpose:** Update an existing user.
+- **Input:** URL param `uid`, body `{ first_name, last_name, email }`
+- **Logic:**
+  - Validates required fields.
+  - Updates user in MongoDB by ID.
+- **Output:**
+  - `200 OK` with updated user object.
+  - `404 Not Found` if user does not exist.
+  - `400 Bad Request` for missing fields.
+  - `500 Internal Server Error` for DB errors.
+
+#### DELETE `/api/users/:uid`
+- **Purpose:** Delete a user by ID.
+- **Input:** URL param `uid`
+- **Logic:**
+  - Deletes user from MongoDB by ID.
+- **Output:**
+  - `200 OK` with success message.
+  - `404 Not Found` if user does not exist.
+  - `500 Internal Server Error` for DB errors.
+
+---
+
+### Sessions Route (`/api/sessions/current`)
+- **Purpose:** Get the current authenticated user's session info.
+- **Auth:** Requires valid JWT (httpOnly cookie).
+- **Logic:**
+  - Fetches user from MongoDB by ID (from JWT).
+  - Excludes password from the result.
+- **Output:**
+  - `200 OK` with `{ user: { ...fields } }` on success.
+  - `404 Not Found` if user does not exist.
+  - `401 Unauthorized` if not authenticated.
+
+---
+
+### View Routes (`/users`)
+- **GET `/users/login`**: Renders login page. If already logged in, shows a message.
+- **GET `/users/register`**: Renders registration page. If already logged in, redirects to profile.
+- **GET `/users/current`**: Renders profile page. If not logged in, redirects to login. Fetches fresh user data from DB.
+
 ## 🗄️ Database Schema
 
 ### User Model
