@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { generateToken } from '../utils/jwt.js';
 import userDAO from '../dao/user.dao.js';
+import { toUserDTO } from '../dto/user.dto.js';
 
 function validateRequiredFields({ first_name, last_name, email, age, password }) {
   return first_name && last_name && email && age && password;
@@ -35,7 +36,7 @@ export async function registerUser(req, res) {
       maxAge: 24 * 60 * 60 * 1000,
       path: '/'
     });
-    res.status(201).json({ message: 'Usuario registrado exitosamente', user: { id: newUser._id, name: newUser.first_name, email: newUser.email } });
+    res.status(201).json({ message: 'Usuario registrado exitosamente', user: toUserDTO(newUser) });
   } catch (error) {
     console.error('Registration error:', error);
     if (error.code === 11000) {
@@ -68,7 +69,7 @@ export async function loginUser(req, res) {
       maxAge: 24 * 60 * 60 * 1000,
       path: '/'
     });
-    res.json({ message: 'Login exitoso', user: { id: user._id, name: user.first_name, email: user.email } });
+    res.json({ message: 'Login exitoso', user: toUserDTO(user) });
   } catch (error) {
     console.error('Login error:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -81,7 +82,7 @@ export async function getProfile(req, res) {
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    res.json({ user: { id: user._id, name: user.first_name, email: user.email, first_name: user.first_name, last_name: user.last_name, age: user.age, created_at: user.created_at } });
+    res.json({ user: toUserDTO(user) });
   } catch (error) {
     console.error('Profile error:', error);
     res.status(500).json({ error: 'Error interno del servidor' });

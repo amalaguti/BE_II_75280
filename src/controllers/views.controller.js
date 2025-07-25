@@ -1,4 +1,5 @@
 import userDAO from '../dao/user.dao.js';
+import { toUserDTO } from '../dto/user.dto.js';
 
 export function redirectToLogin(req, res) {
   res.redirect('/users/login');
@@ -8,7 +9,7 @@ export function renderLogin(req, res) {
   console.log('Login page');
   if (req.user) {
     return res.render('login', {
-      loggedInUser: req.user,
+      loggedInUser: toUserDTO(req.user),
       showLoggedInMessage: true
     });
   }
@@ -33,20 +34,9 @@ export async function renderCurrent(req, res) {
     if (!user) {
       return res.redirect('/users/login');
     }
-    const userData = {
-      id: user._id,
-      name: user.first_name,
-      email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      age: user.age,
-      role: user.role,
-      cart: user.cart,
-      created_at: user.created_at
-    };
-    res.render('current', { user: userData });
+    res.render('current', { user: toUserDTO(user) });
   } catch (error) {
     console.error('Error fetching user data:', error);
-    res.render('current', { user: req.user });
+    res.render('current', { user: toUserDTO(req.user) });
   }
 } 

@@ -1,4 +1,5 @@
 import userDAO from '../dao/user.dao.js';
+import { toUserDTO } from '../dto/user.dto.js';
 
 export async function getCurrentSessionUser(req, res) {
   try {
@@ -6,19 +7,7 @@ export async function getCurrentSessionUser(req, res) {
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    res.json({
-      user: {
-        id: user._id,
-        name: user.first_name,
-        email: user.email,
-        first_name: user.first_name,
-        last_name: user.last_name,
-        age: user.age,
-        role: user.role,
-        cart: user.cart,
-        created_at: user.created_at
-      }
-    });
+    res.json({ user: toUserDTO(user) });
   } catch (error) {
     console.error('Current session error:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
