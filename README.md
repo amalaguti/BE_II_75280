@@ -61,6 +61,20 @@ src/
 └── app.js                   # Main application file
 ```
 
+## 🏗️ Architecture Patterns: DAO & DTO
+
+### Data Access Object (DAO)
+- **What:** Encapsulates all database access logic for a given model.
+- **Why:** Keeps controllers clean and decouples business logic from data access. Makes it easy to swap databases or add caching.
+- **Where:** See `src/dao/user.dao.js`. All user-related DB operations are performed through this DAO.
+- **Pattern:** In this project, DAOs are implemented as plain objects (the most common Node.js/Mongoose style). Use a class if you need state, inheritance, or extensibility.
+
+### Data Transfer Object (DTO)
+- **What:** Defines the shape of data sent to the client, ensuring sensitive fields (like passwords) are never exposed.
+- **Why:** Keeps API responses consistent, secure, and decoupled from the database schema.
+- **Where:** See `src/dto/user.dto.js`. All user data sent in API responses is formatted using the DTO.
+- **Pattern:** The `toUserDTO(user)` function is used in all controllers before sending user data in responses.
+
 ## 🔧 API Endpoints
 
 ### Authentication Endpoints
@@ -105,7 +119,7 @@ src/
   - Creates a new user in MongoDB.
   - Generates a JWT token and sets it in an httpOnly cookie (`currentUser`).
 - **Output:**
-  - `201 Created` with `{ message, user: { id, name, email } }` on success.
+  - `201 Created` with `{ message, user: userDTO }` on success (see DTO section).
   - `400 Bad Request` for missing fields, invalid age, or duplicate email.
   - `500 Internal Server Error` for unexpected errors.
 
@@ -117,7 +131,7 @@ src/
   - Compares password with stored hash using bcryptjs.
   - On success, generates a JWT token and sets it in an httpOnly cookie (`currentUser`).
 - **Output:**
-  - `200 OK` with `{ message, user: { id, name, email } }` on success.
+  - `200 OK` with `{ message, user: userDTO }` on success (see DTO section).
   - `401 Unauthorized` for invalid credentials.
   - `500 Internal Server Error` for unexpected errors.
 
@@ -128,7 +142,7 @@ src/
   - Fetches user from MongoDB by ID (from JWT).
   - Excludes password from the result.
 - **Output:**
-  - `200 OK` with `{ user: { ...fields } }` on success.
+  - `200 OK` with `{ user: userDTO }` on success (see DTO section).
   - `404 Not Found` if user does not exist.
   - `401 Unauthorized` if not authenticated.
 
@@ -148,7 +162,7 @@ src/
 - **Logic:**
   - Fetches all users from MongoDB.
 - **Output:**
-  - `200 OK` with array of user objects.
+  - `200 OK` with array of user DTOs (see DTO section).
   - `500 Internal Server Error` for DB errors.
 
 #### POST `/api/users`
@@ -158,7 +172,7 @@ src/
   - Validates required fields.
   - Creates a new user in MongoDB.
 - **Output:**
-  - `201 Created` with user object.
+  - `201 Created` with user DTO (see DTO section).
   - `400 Bad Request` for missing fields.
   - `500 Internal Server Error` for DB errors.
 
@@ -169,7 +183,7 @@ src/
   - Validates required fields.
   - Updates user in MongoDB by ID.
 - **Output:**
-  - `200 OK` with updated user object.
+  - `200 OK` with updated user DTO (see DTO section).
   - `404 Not Found` if user does not exist.
   - `400 Bad Request` for missing fields.
   - `500 Internal Server Error` for DB errors.
@@ -180,7 +194,7 @@ src/
 - **Logic:**
   - Deletes user from MongoDB by ID.
 - **Output:**
-  - `200 OK` with success message.
+  - `200 OK` with success message and deleted user DTO (see DTO section).
   - `404 Not Found` if user does not exist.
   - `500 Internal Server Error` for DB errors.
 
@@ -193,7 +207,7 @@ src/
   - Fetches user from MongoDB by ID (from JWT).
   - Excludes password from the result.
 - **Output:**
-  - `200 OK` with `{ user: { ...fields } }` on success.
+  - `200 OK` with `{ user: userDTO }` on success (see DTO section).
   - `404 Not Found` if user does not exist.
   - `401 Unauthorized` if not authenticated.
 
@@ -241,6 +255,14 @@ src/
 - **bcryptjs** - Password hashing
 - **Express Handlebars** - Template engine
 - **Cookie Parser** - Cookie handling
+
+## 🌐 CORS Policy
+
+- **What:** CORS (Cross-Origin Resource Sharing) controls which origins can make requests to your API.
+- **How:** Configured in `src/app.js` using the `cors` middleware.
+- **Default:** Only requests from `http://localhost:8081` (or whichever origin is set in the code) are allowed.
+- **To change allowed origins:** Edit the `origin` property in the `cors` middleware setup in `app.js`.
+- **Note:** CORS only affects cross-origin JavaScript requests (fetch/AJAX); direct browser navigation is always allowed.
 
 ## 🚀 Getting Started
 
@@ -293,22 +315,6 @@ The project includes several test files:
 - `test-age-validation.js` - Age validation tests
 - `test-cookies.html` - Cookie functionality tests
 
-## 📝 Recent Updates (v1.0)
-
-### New Features Added:
-- ✅ **Enhanced User Model**: Added `cart` and `role` fields
-- ✅ **Role-Based System**: User, Admin, Premium roles with visual badges
-- ✅ **Shopping Cart Integration**: MongoDB ObjectId references for cart system
-- ✅ **Sessions API**: New `/api/sessions/current` endpoint
-- ✅ **Enhanced Profile View**: Complete user information display
-- ✅ **Improved Security**: Updated passport configuration with new fields
-- ✅ **Better UX**: Cleaner profile layout without duplicate information
-
-### Technical Improvements:
-- ✅ **Database Integration**: Direct database queries for fresh user data
-- ✅ **API Consistency**: Standardized response formats
-- ✅ **Error Handling**: Robust fallback mechanisms
-- ✅ **Code Organization**: Modular route structure
 
 ## 🔒 Security Best Practices
 
