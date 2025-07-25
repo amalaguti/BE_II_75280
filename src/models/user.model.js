@@ -55,8 +55,5 @@ userSchema.pre('save', function(next) {
     next();
 });
 
-// Create index on email for faster lookups
-userSchema.index({ email: 1 });
-
 const userModel = mongoose.model(userCollection, userSchema);
 export default userModel;
