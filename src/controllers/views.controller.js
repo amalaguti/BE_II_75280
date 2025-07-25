@@ -1,4 +1,4 @@
-import userModel from '../models/user.model.js';
+import userDAO from '../dao/user.dao.js';
 
 export function redirectToLogin(req, res) {
   res.redirect('/users/login');
@@ -29,7 +29,7 @@ export async function renderCurrent(req, res) {
     return res.redirect('/users/login');
   }
   try {
-    const user = await userModel.findById(req.user.id).select('-password');
+    const user = await userDAO.findById(req.user.id);
     if (!user) {
       return res.redirect('/users/login');
     }

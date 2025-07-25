@@ -1,8 +1,8 @@
-import userModel from '../models/user.model.js';
+import userDAO from '../dao/user.dao.js';
 
 export async function getCurrentSessionUser(req, res) {
   try {
-    const user = await userModel.findById(req.user.id).select('-password');
+    const user = await userDAO.findById(req.user.id);
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
