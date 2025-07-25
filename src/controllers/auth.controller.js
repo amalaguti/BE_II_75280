@@ -3,14 +3,23 @@ import { generateToken } from '../utils/jwt.js';
 import userModel from '../models/user.model.js';
 import { authenticateJWT } from '../middleware/auth.js';
 
+function validateRequiredFields({ first_name, last_name, email, age, password }) {
+  return first_name && last_name && email && age && password;
+}
+
+function validateAge(age) {
+  const ageNum = parseInt(age);
+  if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) return false;
+  return true;
+}
+
 export async function registerUser(req, res) {
   try {
     const { first_name, last_name, email, age, password } = req.body;
-    if (!first_name || !last_name || !email || !age || !password) {
+    if (!validateRequiredFields({ first_name, last_name, email, age, password })) {
       return res.status(400).json({ error: 'Todos los campos son requeridos' });
     }
-    const ageNum = parseInt(age);
-    if (isNaN(ageNum) || ageNum < 18 || ageNum > 120) {
+    if (!validateAge(age)) {
       return res.status(400).json({ error: 'La edad debe estar entre 18 y 120 años' });
     }
     const existingUser = await userModel.findOne({ email: email.toLowerCase() });
@@ -18,7 +27,7 @@ export async function registerUser(req, res) {
       return res.status(400).json({ error: 'El email ya está registrado' });
     }
     const hashedPassword = await bcrypt.hash(password, 10);
-    const newUser = new userModel({ first_name, last_name, email: email.toLowerCase(), age: ageNum, password: hashedPassword });
+    const newUser = new userModel({ first_name, last_name, email: email.toLowerCase(), age: parseInt(age), password: hashedPassword });
     await newUser.save();
     const token = generateToken(newUser);
     res.cookie('currentUser', token, {
