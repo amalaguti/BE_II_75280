@@ -218,6 +218,37 @@ src/
 - **GET `/users/register`**: Renders registration page. If already logged in, redirects to profile.
 - **GET `/users/current`**: Renders profile page. If not logged in, redirects to login. Fetches fresh user data from DB.
 
+## 📧 Email Sending Feature
+
+A new `/mail` route is available to test email sending with attachments using nodemailer and Gmail SMTP.
+
+- **Endpoint:** `GET /mail`
+- **Description:** Sends a styled HTML email with an attachment (`bici.jpg`) to the configured recipient.
+- **Attachment:** The file `bici.jpg` must be placed in the `static/` folder at the project root (i.e., `./static/bici.jpg`).
+
+### Environment Variables Required
+Add the following variables to your `.env` file:
+
+```
+GSMTP=your-gmail-app-password         # Gmail SMTP password (App Password recommended)
+GSMTP_FROM=your_gmail_address@gmail.com  # Sender email address
+GSMTP_TO=recipient_email@gmail.com       # Recipient email address
+```
+
+- `GSMTP` is the password for your Gmail SMTP (use an App Password, not your regular Gmail password).
+- `GSMTP_FROM` is the email address that will appear as the sender.
+- `GSMTP_TO` is the recipient's email address.
+
+### Example Usage
+
+To trigger the email, run:
+
+```sh
+curl -X GET http://localhost:8080/mail
+```
+
+If configured correctly, you will receive an email with a styled HTML body and the `bici.jpg` image attached.
+
 ## 🗄️ Database Schema
 
 ### User Model
