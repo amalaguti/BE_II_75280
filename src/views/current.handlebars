@@ -130,14 +130,58 @@
       background-color: #fff3e0;
       color: #f57c00;
     }
+    .profile-menu-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+      margin-left: auto;
+    }
+    #profile-icon {
+      padding: 0.25em 0.5em;
+      border-radius: 50%;
+      background: #e3f2fd;
+      transition: background 0.2s;
+    }
+    #profile-icon:hover {
+      background: #bbdefb;
+    }
+    .profile-menu {
+      position: absolute;
+      top: 2.5em;
+      right: 0;
+      background: white;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+      min-width: 180px;
+      z-index: 100;
+      padding: 0.5em 0;
+    }
+    .profile-menu-item {
+      display: block;
+      padding: 0.75em 1.5em;
+      color: #333;
+      text-decoration: none;
+      font-size: 1em;
+      transition: background 0.2s;
+    }
+    .profile-menu-item:hover {
+      background: #f0f4f8;
+      color: #1976d2;
+    }
   </style>
 </head>
 <body>
   <header class="header">
     <nav class="nav">
       <h1>Backend II - 75280</h1>
-      <a href="#" id="logout-btn">Cerrar sesión</a>
-      <a href="/users/reset-password" id="reset-password-btn" style="margin-left: 1em; background: #f57c00; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none;">Reset password</a>
+      <div class="profile-menu-wrapper">
+        <span id="profile-icon" style="cursor:pointer; font-size: 1.7em; user-select: none;">👤</span>
+        <div id="profile-menu" class="profile-menu" style="display:none;">
+          <a href="/users/reset-password" class="profile-menu-item">Reset password</a>
+          <a href="#" id="logout-btn" class="profile-menu-item">Cerrar sesión</a>
+        </div>
+      </div>
     </nav>
   </header>
 
@@ -179,10 +223,26 @@
   </main>
 
   <script>
+    // Profile menu dropdown logic
+    const profileIcon = document.getElementById('profile-icon');
+    const profileMenu = document.getElementById('profile-menu');
+    profileIcon.addEventListener('click', (e) => {
+      e.stopPropagation();
+      profileMenu.style.display = profileMenu.style.display === 'block' ? 'none' : 'block';
+    });
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (profileMenu.style.display === 'block') {
+        profileMenu.style.display = 'none';
+      }
+    });
+    // Prevent menu from closing when clicking inside
+    profileMenu.addEventListener('click', (e) => {
+      e.stopPropagation();
+    });
     // Logout functionality
     document.getElementById('logout-btn').addEventListener('click', async (e) => {
       e.preventDefault();
-      
       try {
         await fetch('/api/auth/logout', {
           method: 'POST'
@@ -190,7 +250,6 @@
       } catch (error) {
         console.error('Logout error:', error);
       } finally {
-        // Redirect to login page
         window.location.href = '/users/login';
       }
     });
