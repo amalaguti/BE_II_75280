@@ -27,6 +27,9 @@ const userDAO = {
   },
   async deleteById(id) {
     return userModel.findByIdAndDelete(id);
+  },
+  async findByResetToken(token) {
+    return userModel.findOne({ resetPasswordToken: token });
   }
 };
 

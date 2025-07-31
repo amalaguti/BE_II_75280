@@ -48,3 +48,18 @@ export async function sendWelcomeEmail({ first_name, last_name }) {
     </div>`
   });
 }
+
+export async function sendPasswordResetEmail({ resetUrl }) {
+  return sendMail({
+    to: process.env.GSMTP_TO,
+    subject: 'Recupera tu contraseña',
+    html: `<div style="font-family: 'Segoe UI', Arial, sans-serif; background: #f4f8fb; padding: 32px; border-radius: 12px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 16px rgba(0,0,0,0.07);">
+      <h2 style="color: #4a90e2; margin-top: 0;">Recupera tu contraseña</h2>
+      <p>Haz clic en el siguiente botón para restablecer tu contraseña. El enlace expirará en 1 hora.</p>
+      <a href="${resetUrl}" style="display:inline-block; background:#4a90e2; color:white; padding:12px 24px; border-radius:6px; text-decoration:none; font-weight:bold; margin: 1em 0;">Restablecer contraseña</a>
+      <p>Si no solicitaste este cambio, ignora este correo.</p>
+      <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;">
+      <div style="text-align: center; color: #aaa; font-size: 0.9em;">Backend II &middot; Coderhouse</div>
+    </div>`
+  });
+}

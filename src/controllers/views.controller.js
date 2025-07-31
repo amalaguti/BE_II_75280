@@ -24,6 +24,11 @@ export function renderRegister(req, res) {
   res.render('register');
 }
 
+export function renderResetPassword(req, res) {
+  // Pass token from query string for convenience (not strictly needed, but for SSR completeness)
+  res.render('reset-password', { token: req.query.token || '' });
+}
+
 export async function renderCurrent(req, res) {
   console.log('Current page');
   if (!req.user) {

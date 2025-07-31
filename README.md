@@ -139,6 +139,56 @@ This project follows a modular, layered architecture using several well-known de
 | `GET` | `/api/auth/profile` | Get user profile (protected) |
 | `POST` | `/api/auth/logout` | Logout user |
 
+### Password Recovery (Forgot/Reset Password)
+
+#### 1. Request Password Reset
+
+**Endpoint:** `POST /api/auth/forgot-password`
+
+**Body:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+**Logic:**
+- If the user exists, generates a secure, random token (expires in 1 hour) and stores it in the user document.
+- Sends a password reset email (always to `GSMTP_TO` for testing) with a link to `/users/reset-password?token=...`.
+- Always responds with a generic success message for privacy.
+
+#### 2. Reset Password Form
+
+**Frontend:**
+- The reset link in the email opens `/users/reset-password?token=...`.
+- The form allows the user to enter a new password and submits to the backend.
+
+#### 3. Submit New Password
+
+**Endpoint:** `POST /api/auth/reset-password`
+
+**Body:**
+```json
+{
+  "token": "the-token-from-email",
+  "newPassword": "newSecurePassword123"
+}
+```
+**Logic:**
+- Validates the token (must exist, not expired).
+- Checks that the new password is different from the previous one.
+- Hashes and updates the password, invalidates the token.
+- Responds with success or error.
+
+#### 4. Frontend Flow
+- The login page now includes a "¿Olvidaste tu contraseña?" link to `/users/reset-password`.
+- The reset password form is styled and provides user feedback.
+
+#### 5. Security Notes
+- Reset tokens expire after 1 hour and are invalidated after use.
+- Passwords are hashed with bcrypt.
+- The new password must be different from the previous password.
+- All reset emails are sent to `GSMTP_TO` for testing.
+
 ### Session Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|
