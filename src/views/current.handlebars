@@ -143,6 +143,10 @@
   <main class="profile-container">
     <div class="profile-header">
       <h2>Bienvenido, {{user.name}}!</h2>
+      <div style="margin: 1.5em auto 0 auto; max-width: 500px; background: #e3f2fd; color: #1976d2; border-left: 6px solid #4a90e2; border-radius: 8px; padding: 1em 1.5em; font-size: 1.1em;">
+        <strong>¡Revisa tu correo!</strong> Te hemos enviado un email de bienvenida.<br>
+        <span style="color: #555; font-size: 0.97em;">(Por estar en modo testing, el email fue enviado a la cuenta definida en la variable <b>{{GSMTP_TO}}</b> en vez de tu email real. Si eres el profesor, revisa la casilla configurada en <code>GSMTP_TO</code>.)</span>
+      </div>
     </div>
 
     <div class="profile-info">

@@ -34,9 +34,9 @@ export async function renderCurrent(req, res) {
     if (!user) {
       return res.redirect('/users/login');
     }
-    res.render('current', { user: toUserDTO(user) });
+    res.render('current', { user: toUserDTO(user), GSMTP_TO: process.env.GSMTP_TO });
   } catch (error) {
     console.error('Error fetching user data:', error);
-    res.render('current', { user: toUserDTO(req.user) });
+    res.render('current', { user: toUserDTO(req.user), GSMTP_TO: process.env.GSMTP_TO });
   }
 } 

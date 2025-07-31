@@ -2,6 +2,7 @@ import bcrypt from 'bcryptjs';
 import { generateToken } from '../utils/jwt.js';
 import userDAO from '../dao/user.dao.js';
 import { toUserDTO } from '../dto/user.dto.js';
+import { sendWelcomeEmail } from '../utils/mail.js';
 
 function validateRequiredFields({ first_name, last_name, email, age, password }) {
   return first_name && last_name && email && age && password;
@@ -36,6 +37,10 @@ export async function registerUser(req, res) {
       maxAge: 24 * 60 * 60 * 1000,
       path: '/'
     });
+
+    // Send welcome email (always to GSMTP_TO for testing)
+    await sendWelcomeEmail({ first_name, last_name });
+
     res.status(201).json({ message: 'Usuario registrado exitosamente', user: toUserDTO(newUser) });
   } catch (error) {
     console.error('Registration error:', error);
