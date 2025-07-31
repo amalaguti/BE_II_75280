@@ -61,6 +61,59 @@ src/
 └── app.js                   # Main application file
 ```
 
+## 🏛️ Architecture Overview & Design Patterns
+
+This project follows a modular, layered architecture using several well-known design patterns to ensure maintainability, scalability, and security. Here is an overview of the main patterns and how they interact:
+
+### Main Patterns & Responsibilities
+
+| Layer         | Folder         | Example File(s)                | Responsibility                        |
+|---------------|---------------|---------------------------------|----------------------------------------|
+| **Model**     | models/        | user.model.js                  | DB schema & validation (Mongoose)      |
+| **DAO**       | dao/           | user.dao.js                    | DB access abstraction (see below)      |
+| **DTO**       | dto/           | user.dto.js                    | API response formatting (see below)    |
+| **Controller**| controllers/   | auth.controller.js             | Business logic                         |
+| **Router**    | routes/        | auth.router.js, users.router.js| Route definitions                      |
+| **Middleware**| middleware/    | auth.js                        | Auth, cross-cutting concerns           |
+| **Utils**     | utils/         | jwt.js                         | Helper functions                       |
+| **Views**     | views/         | *.handlebars                   | Server-side HTML rendering             |
+| **App Entry** | src/           | app.js                         | App setup, middleware, route mounting  |
+
+### How the Layers Interact
+
+- **Routes** receive HTTP requests and delegate to **controllers**.
+- **Controllers** handle business logic, using **DAOs** to interact with the database and **DTOs** to format responses.
+- **Models** define the database schema and validation.
+- **Middleware** (like authentication) is used to protect routes or add cross-cutting logic.
+- **Views** are rendered for browser-based clients, while API endpoints return JSON.
+- **Utils** provide shared helper logic (e.g., JWT handling).
+
+### Example Flow: User Registration
+
+1. **Route:**  
+   `POST /api/auth/register` (in `auth.router.js`)
+2. **Controller:**  
+   `registerUser` in `auth.controller.js`
+3. **DAO:**  
+   Calls `userDAO.create()` to save the user.
+4. **DTO:**  
+   Uses `toUserDTO()` to format the user for the response.
+5. **Model:**  
+   `user.model.js` validates and saves the user.
+6. **Utils:**  
+   `generateToken()` creates a JWT for the new user.
+7. **Middleware:**  
+   Not used for registration, but used for protected routes.
+
+### Benefits
+- **Separation of concerns:** Each layer has a single responsibility.
+- **Testability:** DAOs and controllers can be tested independently.
+- **Security:** DTOs prevent leaking sensitive data.
+- **Scalability:** Easy to add new features by following the same structure.
+- **Maintainability:** Clear, modular code organization.
+
+> **For more details on DAO and DTO patterns, see the next section.**
+
 ## 🏗️ Architecture Patterns: DAO & DTO
 
 ### Data Access Object (DAO)
