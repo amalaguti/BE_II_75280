@@ -31,6 +31,7 @@ ADMIN_PASSWORD=your-admin-password
 - **Role-Based Access Control** (User, Admin, Premium)
 - **Shopping Cart System** with MongoDB references
 - **Secure httpOnly Cookies** for token storage
+- **Welcome email sent on user registration (modularized in `utils/mail.js`, sent to GSMTP_TO for testing)**
 - **Express Handlebars** for server-side rendering
 - **RESTful API** with comprehensive endpoints
 
@@ -171,6 +172,7 @@ This project follows a modular, layered architecture using several well-known de
   - Hashes the password with bcryptjs.
   - Creates a new user in MongoDB.
   - Generates a JWT token and sets it in an httpOnly cookie (`currentUser`).
+  - Sends a welcome email (with the user's name and lastname) to the configured `GSMTP_TO` address (for testing; see `utils/mail.js`).
 - **Output:**
   - `201 Created` with `{ message, user: userDTO }` on success (see DTO section).
   - `400 Bad Request` for missing fields, invalid age, or duplicate email.
