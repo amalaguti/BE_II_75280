@@ -1,4 +1,6 @@
+import cartDAO from '../dao/cart.dao.js';
 import productDAO from '../dao/product.dao.js';
+import userDAO from '../dao/user.dao.js';
 
 export async function createProduct(req, res) {
   if (!req.user || req.user.role !== 'admin') {
@@ -59,4 +61,35 @@ export async function getProducts(req, res) {
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+}
+
+export async function addToCart(req, res) {
+  if (!req.user || req.user.role !== 'user') {
+    return res.status(403).json({ error: 'Solo usuarios pueden agregar productos al carrito' });
+  }
+  const { productId, quantity } = req.body;
+  const qty = parseInt(quantity) || 1;
+  const product = await productDAO.findById(productId);
+  if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
+  if (product.stock < qty) return res.status(400).json({ error: 'Stock insuficiente' });
+  // Decrement stock
+  await productDAO.updateById(productId, { stock: product.stock - qty });
+  // Ensure cart exists and is linked to user
+  let cart = await cartDAO.getCartByUserId(req.user.id);
+  if (!cart) {
+    cart = await cartDAO.createCart(req.user.id);
+    await userDAO.updateById(req.user.id, { cart: cart._id });
+  }
+  await cartDAO.addProductToCart(req.user.id, productId, qty);
+  // Fetch updated cart
+  const updatedCart = await cartDAO.getCartByUserId(req.user.id);
+  res.json(updatedCart);
+}
+
+export async function getCart(req, res) {
+  if (!req.user || req.user.role !== 'user') {
+    return res.status(403).json({ error: 'Solo usuarios pueden ver su carrito' });
+  }
+  const cart = await cartDAO.getCartByUserId(req.user.id);
+  res.json(cart || { products: [] });
 }

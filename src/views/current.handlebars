@@ -198,6 +198,11 @@
     <nav class="nav">
       <h1>Backend II - 75280</h1>
       <div class="profile-menu-wrapper">
+        {{#if (eq user.role 'user')}}
+        <span id="user-cart-icon" style="cursor:pointer; font-size:1.7em; margin-right:0.5em; position:relative;">
+          🛒<span id="user-cart-count" style="position:absolute; top:-8px; right:-10px; background:#d32f2f; color:white; border-radius:50%; font-size:0.8em; padding:2px 6px;">0</span>
+        </span>
+        {{/if}}
         <span id="profile-icon" style="cursor:pointer; font-size: 1.7em; user-select: none;">👤</span>
         <div id="profile-menu" class="profile-menu" style="display:none;">
           <a href="/users/reset-password" class="profile-menu-item">Reset password</a>
@@ -247,6 +252,19 @@
       </div>
     </div>
 
+    {{#if (eq user.role 'user')}}
+    <section id="user-products-section" style="margin-top:2.5em;">
+      <h3>Productos Disponibles</h3>
+      <div id="user-product-message" style="margin-bottom:1em; color:#d32f2f; display:none;"></div>
+      <table id="user-products-table" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f0f4f8;"><th>Nombre</th><th>Precio</th><th>Stock</th><th>Descripción</th><th>Acciones</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+    {{/if}}
+
     {{#if (eq user.role 'admin')}}
     <section id="admin-products-section" style="margin-top:2.5em;">
       <h3>Gestión de Productos</h3>
@@ -286,6 +304,15 @@
     <div style="background:white; border-radius:12px; max-width:350px; margin:auto; padding:2em 1.5em; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center;">
       <div id="admin-request-modal-message" style="font-size:1.1em; margin-bottom:1.5em;"></div>
       <button id="admin-request-modal-ok" style="background:#4a90e2; color:white; border:none; border-radius:6px; padding:0.7em 2em; font-size:1em; cursor:pointer;">OK</button>
+    </div>
+  </div>
+
+  <!-- User Cart Modal -->
+  <div id="user-cart-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:9999; align-items:center; justify-content:center;">
+    <div style="background:white; border-radius:12px; max-width:400px; margin:auto; padding:2em 1.5em; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center;">
+      <h3>Tu Carrito</h3>
+      <div id="user-cart-contents"></div>
+      <button id="user-cart-modal-ok" style="background:#4a90e2; color:white; border:none; border-radius:6px; padding:0.7em 2em; font-size:1em; cursor:pointer; margin-top:1em;">Cerrar</button>
     </div>
   </div>
 
@@ -522,6 +549,130 @@
         }
       });
       fetchUsers();
+    }
+
+    // --- USER PRODUCT LIST & CART ---
+    if ({{#if (eq user.role 'user')}}true{{else}}false{{/if}}) {
+      const userProductsTableBody = document.querySelector('#user-products-table tbody');
+      const userProductMsg = document.getElementById('user-product-message');
+      const cartIcon = document.getElementById('user-cart-icon');
+      const cartCount = document.getElementById('user-cart-count');
+      const cartModal = document.getElementById('user-cart-modal');
+      const cartContents = document.getElementById('user-cart-contents');
+      const cartModalOk = document.getElementById('user-cart-modal-ok');
+
+      function showUserProductMsg(msg, color = '#d32f2f') {
+        userProductMsg.textContent = msg;
+        userProductMsg.style.color = color;
+        userProductMsg.style.display = 'block';
+        setTimeout(() => { userProductMsg.style.display = 'none'; }, 2500);
+      }
+
+      async function fetchUserProducts() {
+        const res = await fetch('/api/products');
+        const products = await res.json();
+        renderUserProducts(products);
+      }
+
+      function renderUserProducts(products) {
+        userProductsTableBody.innerHTML = '';
+        products.forEach(prod => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${prod.name}</td>
+            <td>$${prod.price.toFixed(2)}</td>
+            <td>${prod.stock}</td>
+            <td>${prod.description || ''}</td>
+            <td>
+              <button data-id="${prod._id}" class="add-to-cart-btn" ${prod.stock < 1 ? 'disabled' : ''}>Agregar al carrito</button>
+            </td>
+          `;
+          userProductsTableBody.appendChild(tr);
+        });
+      }
+
+      userProductsTableBody.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('add-to-cart-btn')) {
+          const id = e.target.getAttribute('data-id');
+          // Defensive: Only proceed if id looks like a Mongo ObjectId (24 hex chars)
+          if (!id || !/^[a-fA-F0-9]{24}$/.test(id)) {
+            console.warn('Invalid product id for add to cart:', id);
+            return;
+          }
+          const res = await fetch('/api/products/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId: id, quantity: 1 })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showUserProductMsg('Producto agregado al carrito', '#388e3c');
+            fetchUserProducts();
+            await fetchUserCart();
+          } else {
+            showUserProductMsg(data.error || 'Error al agregar al carrito');
+          }
+        }
+      });
+
+      // --- CART ICON & MODAL ---
+      cartIcon.addEventListener('click', async () => {
+        await fetchUserCart();
+        cartModal.style.display = 'flex';
+        renderCartModal();
+        // Debug: log cart and user info
+        const cart = window._userCart;
+        const userIdFromUI = '{{user._id}}';
+        if (cart) {
+          console.log('Cart info:', cart);
+          if (cart.user) {
+            console.log('Cart user ID:', cart.user);
+            console.log('User ID from UI:', userIdFromUI);
+            if (cart.user === userIdFromUI || (cart.user._id && cart.user._id === userIdFromUI)) {
+              console.log('User ID matches between UI and cart.');
+            } else {
+              console.warn('User ID does NOT match between UI and cart!');
+            }
+          }
+        }
+      });
+      cartModalOk.addEventListener('click', () => {
+        cartModal.style.display = 'none';
+      });
+
+      async function fetchUserCart() {
+        const res = await fetch('/api/products/cart');
+        const cart = await res.json();
+        console.log('Fetched cart:', cart); // DEBUG
+        updateCartCount(cart);
+        window._userCart = cart; // for modal rendering
+      }
+
+      function updateCartCount(cart) {
+        if (!cart || !Array.isArray(cart.products)) {
+          cartCount.textContent = 0;
+          return;
+        }
+        const count = cart.products.reduce((sum, p) => sum + (p.quantity || 0), 0);
+        cartCount.textContent = count;
+      }
+
+      function renderCartModal() {
+        const cart = window._userCart || { products: [] };
+        if (!cart.products || !cart.products.length) {
+          cartContents.innerHTML = `<p>Tu carrito está vacío.</p>` +
+            `{{#if user.cart}}<div style="color:#888; font-size:0.97em; margin-top:0.5em;">Carrito ID: <b>{{user.cart}}</b></div>{{/if}}`;
+          return;
+        }
+        cartContents.innerHTML = '<ul style="list-style:none; padding:0;">' +
+          cart.products.map(p =>
+            `<li style="margin-bottom:0.5em;">${p.product && p.product.name ? p.product.name : 'Producto'} x ${p.quantity} <span style="color:#888;">($${p.product && p.product.price ? p.product.price.toFixed(2) : '0.00'})</span></li>`
+          ).join('') +
+          '</ul>';
+      }
+
+      fetchUserProducts();
+      fetchUserCart();
     }
   </script>
 </body>
