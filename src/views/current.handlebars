@@ -246,6 +246,39 @@
         <p>{{#if user.cart}}{{user.cart}}{{else}}Sin carrito asignado{{/if}}</p>
       </div>
     </div>
+
+    {{#if (eq user.role 'admin')}}
+    <section id="admin-products-section" style="margin-top:2.5em;">
+      <h3>Gestión de Productos</h3>
+      <form id="product-form" style="margin-bottom:1.5em; display:flex; gap:0.5em; flex-wrap:wrap; align-items:center;">
+        <input type="hidden" name="id" id="product-id" />
+        <input type="text" name="name" id="product-name" placeholder="Nombre" required />
+        <input type="number" name="price" id="product-price" placeholder="Precio" required min="0" step="0.01" />
+        <input type="number" name="stock" id="product-stock" placeholder="Stock" required min="0" />
+        <input type="text" name="description" id="product-description" placeholder="Descripción" />
+        <button type="submit" id="product-save-btn">Agregar/Actualizar</button>
+        <button type="button" id="product-cancel-btn" style="display:none;">Cancelar</button>
+      </form>
+      <div id="product-message" style="margin-bottom:1em; color:#d32f2f; display:none;"></div>
+      <table id="products-table" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f0f4f8;"><th>Nombre</th><th>Precio</th><th>Stock</th><th>Descripción</th><th>Acciones</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+
+    <section id="admin-users-section" style="margin-top:2.5em;">
+      <h3>Gestión de Usuarios</h3>
+      <div id="user-message" style="margin-bottom:1em; color:#d32f2f; display:none;"></div>
+      <table id="users-table" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f0f4f8;"><th>Nombre</th><th>Email</th><th>Rol</th><th>Acciones</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+    {{/if}}
   </main>
 
   <!-- Modal for admin request feedback -->
@@ -314,6 +347,182 @@
     document.getElementById('admin-request-modal-ok').addEventListener('click', () => {
       document.getElementById('admin-request-modal').style.display = 'none';
     });
+
+    // --- ADMIN PRODUCT MANAGEMENT ---
+    if ({{#if (eq user.role 'admin')}}true{{else}}false{{/if}}) {
+      const productForm = document.getElementById('product-form');
+      const productIdField = document.getElementById('product-id');
+      const productNameField = document.getElementById('product-name');
+      const productPriceField = document.getElementById('product-price');
+      const productStockField = document.getElementById('product-stock');
+      const productDescField = document.getElementById('product-description');
+      const productSaveBtn = document.getElementById('product-save-btn');
+      const productCancelBtn = document.getElementById('product-cancel-btn');
+      const productMsg = document.getElementById('product-message');
+      const productsTableBody = document.querySelector('#products-table tbody');
+
+      let editingProductId = null;
+
+      function showProductMsg(msg, color = '#d32f2f') {
+        productMsg.textContent = msg;
+        productMsg.style.color = color;
+        productMsg.style.display = 'block';
+        setTimeout(() => { productMsg.style.display = 'none'; }, 2500);
+      }
+
+      async function fetchProducts() {
+        const res = await fetch('/api/products');
+        const products = await res.json();
+        renderProducts(products);
+      }
+
+      function renderProducts(products) {
+        productsTableBody.innerHTML = '';
+        products.forEach(prod => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${prod.name}</td>
+            <td>$${prod.price.toFixed(2)}</td>
+            <td>${prod.stock}</td>
+            <td>${prod.description || ''}</td>
+            <td>
+              <button data-id="${prod._id}" class="edit-product-btn">Editar</button>
+              <button data-id="${prod._id}" class="delete-product-btn" style="color:#d32f2f;">Eliminar</button>
+            </td>
+          `;
+          productsTableBody.appendChild(tr);
+        });
+      }
+
+      productForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = productIdField.value;
+        const data = {
+          name: productNameField.value,
+          price: parseFloat(productPriceField.value),
+          stock: parseInt(productStockField.value),
+          description: productDescField.value
+        };
+        let res, prod;
+        if (id) {
+          res = await fetch(`/api/products/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        } else {
+          res = await fetch('/api/products', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+        }
+        prod = await res.json();
+        if (res.ok) {
+          showProductMsg('Producto guardado', '#388e3c');
+          productForm.reset();
+          productIdField.value = '';
+          productCancelBtn.style.display = 'none';
+          editingProductId = null;
+          fetchProducts();
+        } else {
+          showProductMsg(prod.error || 'Error al guardar producto');
+        }
+      });
+
+      productCancelBtn.addEventListener('click', () => {
+        productForm.reset();
+        productIdField.value = '';
+        productCancelBtn.style.display = 'none';
+        editingProductId = null;
+      });
+
+      productsTableBody.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('edit-product-btn')) {
+          const id = e.target.getAttribute('data-id');
+          const res = await fetch(`/api/products/${id}`);
+          const prod = await res.json();
+          productIdField.value = prod._id;
+          productNameField.value = prod.name;
+          productPriceField.value = prod.price;
+          productStockField.value = prod.stock;
+          productDescField.value = prod.description || '';
+          productCancelBtn.style.display = '';
+          editingProductId = id;
+        } else if (e.target.classList.contains('delete-product-btn')) {
+          const id = e.target.getAttribute('data-id');
+          if (confirm('¿Eliminar este producto?')) {
+            const res = await fetch(`/api/products/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+              showProductMsg('Producto eliminado', '#388e3c');
+              fetchProducts();
+            } else {
+              showProductMsg('Error al eliminar producto');
+            }
+          }
+        }
+      });
+
+      fetchProducts();
+    }
+
+    // --- ADMIN USER MANAGEMENT ---
+    if ({{#if (eq user.role 'admin')}}true{{else}}false{{/if}}) {
+      const usersTableBody = document.querySelector('#users-table tbody');
+      const userMsg = document.getElementById('user-message');
+      function showUserMsg(msg, color = '#d32f2f') {
+        userMsg.textContent = msg;
+        userMsg.style.color = color;
+        userMsg.style.display = 'block';
+        setTimeout(() => { userMsg.style.display = 'none'; }, 2500);
+      }
+      async function fetchUsers() {
+        const res = await fetch('/api/users/admin');
+        const users = await res.json();
+        renderUsers(users);
+      }
+      function renderUsers(users) {
+        usersTableBody.innerHTML = '';
+        users.forEach(u => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${u.name} ${u.last_name}</td>
+            <td>${u.email}</td>
+            <td>
+              <select data-id="${u.id}" class="user-role-select">
+                <option value="user" ${u.role === 'user' ? 'selected' : ''}>user</option>
+                <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>admin</option>
+                <option value="premium" ${u.role === 'premium' ? 'selected' : ''}>premium</option>
+              </select>
+            </td>
+            <td>
+              <button data-id="${u.id}" class="delete-user-btn" style="color:#d32f2f;">Eliminar</button>
+            </td>
+          `;
+          usersTableBody.appendChild(tr);
+        });
+      }
+      usersTableBody.addEventListener('change', async (e) => {
+        if (e.target.classList.contains('user-role-select')) {
+          const id = e.target.getAttribute('data-id');
+          const role = e.target.value;
+          const res = await fetch(`/api/users/${id}/role`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ role }) });
+          if (res.ok) {
+            showUserMsg('Rol actualizado', '#388e3c');
+            fetchUsers();
+          } else {
+            showUserMsg('Error al actualizar rol');
+          }
+        }
+      });
+      usersTableBody.addEventListener('click', async (e) => {
+        if (e.target.classList.contains('delete-user-btn')) {
+          const id = e.target.getAttribute('data-id');
+          if (confirm('¿Eliminar este usuario?')) {
+            const res = await fetch(`/api/users/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+              showUserMsg('Usuario eliminado', '#388e3c');
+              fetchUsers();
+            } else {
+              showUserMsg('Error al eliminar usuario');
+            }
+          }
+        }
+      });
+      fetchUsers();
+    }
   </script>
 </body>
 </html> 

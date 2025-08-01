@@ -43,6 +43,20 @@ export async function updateUser(req, res) {
   }
 }
 
+export async function updateUserRole(req, res) {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Solo administradores pueden actualizar roles' });
+  }
+  const { uid } = req.params;
+  const { role } = req.body;
+  if (!['user', 'admin', 'premium'].includes(role)) {
+    return res.status(400).json({ error: 'Rol inválido' });
+  }
+  const user = await userDAO.updateById(uid, { role });
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  res.json(toUserDTO(user));
+}
+
 export async function deleteUser(req, res) {
   let { uid } = req.params;
   try {
@@ -109,4 +123,12 @@ export async function approveAdminRequest(req, res) {
 export async function denyAdminRequest(req, res) {
   // For now, just show a message (could notify user, etc.)
   return res.send('<h2>Solicitud de administrador denegada.</h2>');
+}
+
+export async function getAllUsers(req, res) {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Solo administradores pueden ver usuarios' });
+  }
+  const users = await userDAO.findAll();
+  res.json(users.map(toUserDTO));
 } 

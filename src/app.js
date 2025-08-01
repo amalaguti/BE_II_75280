@@ -12,6 +12,7 @@ import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from 'url';
 import handlebarsHelpers from 'handlebars-helpers';
+import productsRouter from './routes/products.router.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -94,6 +95,7 @@ app.get("/", (req, res) => {
 app.use("/api/auth", authRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/sessions", sessionsRouter);
+app.use("/api/products", productsRouter);
 
 // View routes
 app.use('/users', viewsRouter)
