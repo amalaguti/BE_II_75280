@@ -72,8 +72,7 @@ export async function addToCart(req, res) {
   const product = await productDAO.findById(productId);
   if (!product) return res.status(404).json({ error: 'Producto no encontrado' });
   if (product.stock < qty) return res.status(400).json({ error: 'Stock insuficiente' });
-  // Decrement stock
-  await productDAO.updateById(productId, { stock: product.stock - qty });
+  // Do NOT decrement stock here. Only check stock, but leave update for purchase step.
   // Ensure cart exists and is linked to user
   let cart = await cartDAO.getCartByUserId(req.user.id);
   if (!cart) {
