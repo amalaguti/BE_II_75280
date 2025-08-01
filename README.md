@@ -189,6 +189,30 @@ This project follows a modular, layered architecture using several well-known de
 - The new password must be different from the previous password.
 - All reset emails are sent to `GSMTP_TO` for testing.
 
+### Admin Role Request Process
+
+#### 1. Requesting Admin Role
+- Logged-in users can request admin role from their profile page (via the profile icon menu).
+- When requested, the system sends an email to the address defined in the `GSMTP_ADMIN` environment variable.
+
+#### 2. Admin Approval Email
+- The email contains user information and two secure links: **ACEPTAR** and **DENEGAR**.
+- These links are single-use and expire after 24 hours.
+- The links point to `/api/users/approve-admin?token=...` and `/api/users/deny-admin?token=...`.
+
+#### 3. Approving or Denying
+- If the admin clicks **ACEPTAR**, the user’s role is updated to `admin` in the database.
+- If the admin clicks **DENEGAR**, the request is denied (no role change).
+
+#### 4. Security Notes
+- The approval/denial links use a secure JWT token, signed with `JWT_SECRET` and expiring in 24 hours.
+- Only the admin email receives the approval links (set `GSMTP_ADMIN` in your `.env`).
+
+#### 5. Environment Variable
+```
+GSMTP_ADMIN=admin_approver_email@example.com
+```
+
 ### Session Endpoints
 | Method | Endpoint | Description |
 |--------|----------|-------------|

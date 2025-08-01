@@ -11,6 +11,7 @@ import cors from "cors";
 import nodemailer from "nodemailer";
 import path from "path";
 import { fileURLToPath } from 'url';
+import handlebarsHelpers from 'handlebars-helpers';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -29,8 +30,10 @@ app.use(cors({ origin: 'http://localhost:8080' })); // Only allow requests from 
 app.use(json());
 app.use(urlencoded({ extended: true }));
 
-// Handlebars setup
-app.engine('handlebars', engine());
+// Handlebars setup with helpers
+const hbsEngine = engine();
+handlebarsHelpers({ handlebars: hbsEngine.handlebars });
+app.engine('handlebars', hbsEngine);
 app.set('view engine', 'handlebars');
 app.set('views', './src/views');
 

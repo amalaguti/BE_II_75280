@@ -1,5 +1,8 @@
 import userDAO from '../dao/user.dao.js';
 import { toUserDTO } from '../dto/user.dto.js';
+import jwt from 'jsonwebtoken';
+import { sendAdminRequestEmail } from '../utils/mail.js';
+import { sendAdminApprovalEmail } from '../utils/mail.js';
 
 export async function getUsers(req, res) {
   try {
@@ -51,4 +54,59 @@ export async function deleteUser(req, res) {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+}
+
+export async function requestAdminRole(req, res) {
+  const user = req.user;
+  if (!user) {
+    return res.status(401).json({ error: 'No autenticado' });
+  }
+  // Generate secure token (JWT)
+  const token = jwt.sign(
+    {
+      uid: user.id,
+      action: 'admin_request',
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: '24h' }
+  );
+  const approveUrl = `${process.env.BASE_URL || 'http://localhost:8080'}/api/users/approve-admin?token=${token}`;
+  const denyUrl = `${process.env.BASE_URL || 'http://localhost:8080'}/api/users/deny-admin?token=${token}`;
+  await sendAdminRequestEmail({
+    to: process.env.GSMTP_ADMIN,
+    user,
+    approveUrl,
+    denyUrl
+  });
+  return res.json({ message: 'Solicitud enviada al administrador.' });
+}
+
+export async function approveAdminRequest(req, res) {
+  const { token } = req.query;
+  if (!token) return res.status(400).send('Token requerido');
+  try {
+    const payload = jwt.verify(token, process.env.JWT_SECRET);
+    if (payload.action !== 'admin_request' || !payload.uid) {
+      return res.status(400).send('Token inválido');
+    }
+    // Find user
+    const user = await userDAO.findById(payload.uid);
+    if (!user) return res.status(404).send('Usuario no encontrado');
+    if (user.role === 'admin') {
+      return res.send('<h2>El usuario ya es administrador.</h2>');
+    }
+    // Update role
+    user.role = 'admin';
+    await user.save();
+    // Send approval email (to GSMTP_TO for testing)
+    await sendAdminApprovalEmail({ to: process.env.GSMTP_TO, user });
+    return res.send('<h2>Rol de administrador concedido exitosamente.</h2>');
+  } catch (err) {
+    return res.status(400).send('Token inválido o expirado');
+  }
+}
+
+export async function denyAdminRequest(req, res) {
+  // For now, just show a message (could notify user, etc.)
+  return res.send('<h2>Solicitud de administrador denegada.</h2>');
 } 
