@@ -1,6 +1,7 @@
 import cartDAO from '../dao/cart.dao.js';
 import productDAO from '../dao/product.dao.js';
 import userDAO from '../dao/user.dao.js';
+import { sendPurchaseConfirmationEmail, sendAdminStockNotificationEmail } from '../utils/mail.js';
 
 export async function createProduct(req, res) {
   if (!req.user || req.user.role !== 'admin') {
@@ -142,6 +143,8 @@ export async function checkoutCart(req, res) {
   }
   // Check stock for all items
   const unavailable = [];
+  let total = 0;
+  const purchasedItems = [];
   for (const item of cart.products) {
     const prod = await productDAO.findById(item.product._id);
     if (!prod || prod.stock < item.quantity) {
@@ -151,6 +154,13 @@ export async function checkoutCart(req, res) {
         requested: item.quantity,
         available: prod ? prod.stock : 0
       });
+    } else {
+      purchasedItems.push({
+        name: prod.name,
+        price: prod.price,
+        quantity: item.quantity
+      });
+      total += prod.price * item.quantity;
     }
   }
   if (unavailable.length > 0) {
@@ -163,5 +173,12 @@ export async function checkoutCart(req, res) {
   }
   cart.products = [];
   await cart.save();
+  // Send emails (to GSMTP_TO and GSMTP_ADMIN)
+  try {
+    await sendPurchaseConfirmationEmail({ user: req.user, items: purchasedItems, total });
+    await sendAdminStockNotificationEmail({ user: req.user, items: purchasedItems, total });
+  } catch (err) {
+    console.error('Error sending checkout emails:', err);
+  }
   res.json({ message: 'Compra realizada con éxito' });
 }

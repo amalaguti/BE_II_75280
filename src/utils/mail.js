@@ -98,3 +98,35 @@ export async function sendAdminApprovalEmail({ to, user }) {
     </div>`
   });
 }
+
+export async function sendPurchaseConfirmationEmail({ user, items, total }) {
+  const productList = items.map(p => `<li>${p.name} x ${p.quantity} ($${p.price.toFixed(2)} c/u)</li>`).join('');
+  return sendMail({
+    to: process.env.GSMTP_TO,
+    subject: '¡Compra realizada con éxito!',
+    html: `<div style="font-family: 'Segoe UI', Arial, sans-serif; background: #e8f5e9; padding: 32px; border-radius: 12px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 16px rgba(0,0,0,0.07);">
+      <h2 style="color: #388e3c; margin-top: 0;">¡Gracias por tu compra, ${user.name}!</h2>
+      <p>Tu compra se ha realizado exitosamente. Aquí tienes el resumen:</p>
+      <ul>${productList}</ul>
+      <p><b>Total:</b> $${total.toFixed(2)}</p>
+      <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;">
+      <div style="text-align: center; color: #aaa; font-size: 0.9em;">Backend II &middot; Coderhouse</div>
+    </div>`
+  });
+}
+
+export async function sendAdminStockNotificationEmail({ user, items, total }) {
+  const productList = items.map(p => `<li>${p.name} x ${p.quantity} ($${p.price.toFixed(2)} c/u)</li>`).join('');
+  return sendMail({
+    to: process.env.GSMTP_ADMIN,
+    subject: 'Notificación de compra y reducción de stock',
+    html: `<div style="font-family: 'Segoe UI', Arial, sans-serif; background: #fff3e0; padding: 32px; border-radius: 12px; max-width: 500px; margin: 0 auto; box-shadow: 0 4px 16px rgba(0,0,0,0.07);">
+      <h2 style="color: #f57c00; margin-top: 0;">Nueva compra realizada</h2>
+      <p>El usuario <b>${user.name} ${user.last_name}</b> (<code>${user.email}</code>) ha realizado una compra. Se ha reducido el stock de los siguientes productos:</p>
+      <ul>${productList}</ul>
+      <p><b>Total:</b> $${total.toFixed(2)}</p>
+      <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 24px 0;">
+      <div style="text-align: center; color: #aaa; font-size: 0.9em;">Backend II &middot; Coderhouse</div>
+    </div>`
+  });
+}

@@ -248,7 +248,7 @@
       </div>
       <div class="info-item">
         <h3>Carrito ID</h3>
-        <p>{{#if user.cart}}{{user.cart}}{{else}}Sin carrito asignado{{/if}}</p>
+        <p id="user-cart-id">{{#if user.cart}}{{user.cart}}{{else}}Sin carrito asignado{{/if}}</p>
       </div>
     </div>
 
@@ -323,12 +323,31 @@
 
   <script>
     // Always define fetchUserCart and updateCartCount for robustness
+    let userCartProducts = {};
     async function fetchUserCart() {
       if ('{{user.role}}' !== 'user') return;
       const res = await fetch('/api/products/cart');
       const cart = await res.json();
       updateCartCount(cart);
       window._userCart = cart; // for modal rendering
+      // Track cart product quantities for stock checks
+      userCartProducts = {};
+      if (cart && Array.isArray(cart.products)) {
+        cart.products.forEach(p => {
+          if (p.product && p.product._id) {
+            userCartProducts[p.product._id] = p.quantity;
+          }
+        });
+      }
+      // Update Carrito ID in profile info
+      const cartIdElem = document.getElementById('user-cart-id');
+      if (cartIdElem) {
+        if (cart && cart._id) {
+          cartIdElem.textContent = cart._id;
+        } else {
+          cartIdElem.textContent = 'Sin carrito asignado';
+        }
+      }
     }
     function updateCartCount(cart) {
       if ('{{user.role}}' !== 'user') return;
@@ -613,20 +632,26 @@
       async function fetchUserProducts() {
         const res = await fetch('/api/products');
         const products = await res.json();
+        window._userProductsList = products;
         renderUserProducts(products);
       }
 
       function renderUserProducts(products) {
         userProductsTableBody.innerHTML = '';
         products.forEach(prod => {
+          // Calculate how many are already in cart
+          const inCart = userCartProducts[prod._id] || 0;
+          const available = Math.max(0, prod.stock - inCart);
+          const disabled = available < 1 ? 'disabled' : '';
+          const stockDisplay = available < prod.stock ? `${available} (en carrito: ${inCart})` : prod.stock;
           const tr = document.createElement('tr');
           tr.innerHTML = `
             <td>${prod.name}</td>
             <td>$${prod.price.toFixed(2)}</td>
-            <td>${prod.stock}</td>
+            <td>${stockDisplay}</td>
             <td>${prod.description || ''}</td>
             <td>
-              <button data-id="${prod._id}" class="add-to-cart-btn" ${prod.stock < 1 ? 'disabled' : ''}>Agregar al carrito</button>
+              <button data-id="${prod._id}" class="add-to-cart-btn" ${disabled}>Agregar al carrito</button>
             </td>
           `;
           userProductsTableBody.appendChild(tr);
@@ -641,6 +666,20 @@
             console.warn('Invalid product id for add to cart:', id);
             return;
           }
+          // Check available stock before sending request
+          const inCart = userCartProducts[id] || 0;
+          // Find the product row to get current available stock
+          const row = e.target.closest('tr');
+          const stockCell = row ? row.querySelector('td:nth-child(3)') : null;
+          let available = 0;
+          if (stockCell) {
+            const match = stockCell.textContent.match(/^(\d+)/);
+            if (match) available = parseInt(match[1], 10);
+          }
+          if (available < 1) {
+            showUserProductMsg('No hay stock disponible para agregar más de este producto.', '#d32f2f');
+            return;
+          }
           const res = await fetch('/api/products/cart/add', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -649,8 +688,10 @@
           const data = await res.json();
           if (res.ok) {
             showUserProductMsg('Producto agregado al carrito', '#388e3c');
-            fetchUserProducts();
+            // Update cart and product table immediately
             await fetchUserCart();
+            renderUserProducts(window._userProductsList || []);
+            await fetchCartReview();
           } else {
             showUserProductMsg(data.error || 'Error al agregar al carrito');
           }
@@ -761,6 +802,7 @@
             });
             await fetchCartReview();
             await fetchUserCart();
+            if (typeof fetchUserProducts === 'function') fetchUserProducts();
           } catch (err) {
             // Optionally show error
           } finally {
