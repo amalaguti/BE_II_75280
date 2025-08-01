@@ -166,13 +166,14 @@ export async function checkoutCart(req, res) {
   if (unavailable.length > 0) {
     return res.status(409).json({ error: 'Algunos productos no tienen stock suficiente', unavailable });
   }
-  // All items available, proceed to update stock and clear cart
+  // All items available, proceed to update stock
   for (const item of cart.products) {
     const prod = await productDAO.findById(item.product._id);
     await productDAO.updateById(prod._id, { stock: prod.stock - item.quantity });
   }
-  cart.products = [];
-  await cart.save();
+  // Remove cart from DB and clear user.cart
+  await cartDAO.deleteCartByUserId(req.user.id);
+  await userDAO.updateById(req.user.id, { cart: null });
   // Send emails (to GSMTP_TO and GSMTP_ADMIN)
   try {
     await sendPurchaseConfirmationEmail({ user: req.user, items: purchasedItems, total });

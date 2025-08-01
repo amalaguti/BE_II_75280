@@ -700,6 +700,12 @@
 
       // --- CART ICON & MODAL ---
       cartIcon.addEventListener('click', async () => {
+        // Clear cart modal message before opening
+        const cartError = document.getElementById('user-cart-error');
+        if (cartError) {
+          cartError.style.display = 'none';
+          cartError.textContent = '';
+        }
         await fetchUserCart();
         await fetchCartReview();
         cartModal.style.display = 'flex';

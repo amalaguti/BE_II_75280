@@ -29,9 +29,12 @@ ADMIN_PASSWORD=your-admin-password
 - **MongoDB Integration** for persistent data storage
 - **Password Hashing** with bcryptjs
 - **Role-Based Access Control** (User, Admin, Premium)
-- **Shopping Cart System** with MongoDB references
+- **Shopping Cart System** with MongoDB references, dynamic stock checks, and full checkout flow
 - **Secure httpOnly Cookies** for token storage
-- **Welcome email sent on user registration (modularized in `utils/mail.js`, sent to GSMTP_TO for testing)**
+- **Purchase confirmation email sent to user (GSMTP_TO) and stock notification to admin (GSMTP_ADMIN) after checkout**
+- **Admin can clean up (delete) any user's cart (except admins) from the user management table**
+- **Frontend prevents adding more than available stock to cart, updates stock in real time after add/remove/cleanup, and dynamically updates Carrito ID**
+- **Cart is deleted from DB after checkout, and user view shows no cart assigned**
 - **Express Handlebars** for server-side rendering
 - **RESTful API** with comprehensive endpoints
 
@@ -231,6 +234,42 @@ GSMTP_ADMIN=admin_approver_email@example.com
 | `GET` | `/users/login` | Login page |
 | `GET` | `/users/register` | Registration page |
 | `GET` | `/users/current` | Current user profile page (protected) |
+
+## 🛒 Shopping Cart & Checkout Flow
+
+- Users can add products to their cart, but cannot add more than the available stock (considering what's already in their cart).
+- After adding to cart, the available stock in the "Productos Disponibles" table is updated immediately.
+- When a product is removed from the cart, the stock is restored in the product table.
+- When the cart is cleaned up (by admin or after checkout), the product table is refreshed and the Carrito ID is cleared.
+- On checkout:
+  - The backend checks stock for all items.
+  - If all items are available, product stock is decremented, the cart is deleted from the DB, and the user's `cart` reference is cleared.
+  - The user receives a purchase confirmation email (to GSMTP_TO for testing).
+  - The admin receives a stock reduction notification email (to GSMTP_ADMIN for testing).
+  - The frontend updates to show the cart is empty and Carrito ID is no longer shown.
+- The cart modal message (e.g., "¡Compra realizada con éxito!") is cleared every time the cart is opened.
+
+## 🛠️ Admin Cart Cleanup
+
+- In the admin user management table, a "Limpiar carrito" button is shown for all users except admins.
+- Clicking this button deletes the user's cart from the DB and clears the user's `cart` reference.
+- The frontend updates the product table and Carrito ID accordingly.
+
+## 📧 Email Notifications
+
+- **On registration:** Welcome email sent to GSMTP_TO (for testing).
+- **On password recovery:** Reset email sent to GSMTP_TO (for testing).
+- **On admin role request:** Request/approval/denial emails sent to GSMTP_ADMIN and GSMTP_TO as appropriate.
+- **On checkout:**
+  - Purchase confirmation sent to GSMTP_TO (user).
+  - Stock reduction notification sent to GSMTP_ADMIN (admin).
+
+## 🔄 Frontend Improvements
+
+- Product table disables "Agregar al carrito" if no stock is available (considering cart contents).
+- Stock is updated in real time after add/remove/cleanup actions.
+- Carrito ID in the user profile updates dynamically after cart creation, checkout, or cleanup.
+- Cart modal message is cleared every time the cart is opened.
 
 ## 🛣️ Route Logic & Usage
 
