@@ -309,14 +309,38 @@
 
   <!-- User Cart Modal -->
   <div id="user-cart-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.25); z-index:9999; align-items:center; justify-content:center;">
-    <div style="background:white; border-radius:12px; max-width:400px; margin:auto; padding:2em 1.5em; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center;">
+    <div style="background:white; border-radius:12px; max-width:500px; margin:auto; padding:2em 1.5em; box-shadow:0 8px 32px rgba(0,0,0,0.18); text-align:center;">
       <h3>Tu Carrito</h3>
       <div id="user-cart-contents"></div>
-      <button id="user-cart-modal-ok" style="background:#4a90e2; color:white; border:none; border-radius:6px; padding:0.7em 2em; font-size:1em; cursor:pointer; margin-top:1em;">Cerrar</button>
+      <div id="user-cart-total" style="margin-top:1em; font-weight:bold;"></div>
+      <div id="user-cart-error" style="color:#d32f2f; margin-top:0.5em; display:none;"></div>
+      <div style="margin-top:1.5em; display:flex; gap:1em; justify-content:center;">
+        <button id="user-cart-modal-ok" style="background:#4a90e2; color:white; border:none; border-radius:6px; padding:0.7em 2em; font-size:1em; cursor:pointer;">Cerrar</button>
+        <button id="user-cart-checkout-btn" style="background:#388e3c; color:white; border:none; border-radius:6px; padding:0.7em 2em; font-size:1em; cursor:pointer; display:none;">Checkout</button>
+      </div>
     </div>
   </div>
 
   <script>
+    // Always define fetchUserCart and updateCartCount for robustness
+    async function fetchUserCart() {
+      if ('{{user.role}}' !== 'user') return;
+      const res = await fetch('/api/products/cart');
+      const cart = await res.json();
+      updateCartCount(cart);
+      window._userCart = cart; // for modal rendering
+    }
+    function updateCartCount(cart) {
+      if ('{{user.role}}' !== 'user') return;
+      const cartCount = document.getElementById('user-cart-count');
+      if (!cartCount) return;
+      if (!cart || !Array.isArray(cart.products)) {
+        cartCount.textContent = 0;
+        return;
+      }
+      const count = cart.products.reduce((sum, p) => sum + (p.quantity || 0), 0);
+      cartCount.textContent = count;
+    }
     // Profile menu dropdown logic
     const profileIcon = document.getElementById('profile-icon');
     const profileMenu = document.getElementById('profile-menu');
@@ -516,6 +540,7 @@
             </td>
             <td>
               <button data-id="${u.id}" class="delete-user-btn" style="color:#d32f2f;">Eliminar</button>
+              ${u.role !== 'admin' ? `<button data-id="${u.id}" class="clean-cart-btn" style="color:#388e3c; margin-left:0.5em;">Limpiar carrito</button>` : ''}
             </td>
           `;
           usersTableBody.appendChild(tr);
@@ -545,6 +570,23 @@
             } else {
               showUserMsg('Error al eliminar usuario');
             }
+          }
+        } else if (e.target.classList.contains('clean-cart-btn')) {
+          const id = e.target.getAttribute('data-id');
+          e.target.disabled = true;
+          try {
+            const res = await fetch(`/api/users/${id}/cart`, { method: 'DELETE' });
+            const data = await res.json();
+            if (res.ok) {
+              showUserMsg('Carrito limpiado exitosamente', '#388e3c');
+              fetchUsers();
+            } else {
+              showUserMsg(data.error || 'Error al limpiar carrito');
+            }
+          } catch (err) {
+            showUserMsg('Error de conexión');
+          } finally {
+            e.target.disabled = false;
           }
         }
       });
@@ -618,6 +660,7 @@
       // --- CART ICON & MODAL ---
       cartIcon.addEventListener('click', async () => {
         await fetchUserCart();
+        await fetchCartReview();
         cartModal.style.display = 'flex';
         renderCartModal();
         // Debug: log cart and user info
@@ -639,37 +682,92 @@
       cartModalOk.addEventListener('click', () => {
         cartModal.style.display = 'none';
       });
-
-      async function fetchUserCart() {
-        const res = await fetch('/api/products/cart');
-        const cart = await res.json();
-        console.log('Fetched cart:', cart); // DEBUG
-        updateCartCount(cart);
-        window._userCart = cart; // for modal rendering
-      }
-
-      function updateCartCount(cart) {
-        if (!cart || !Array.isArray(cart.products)) {
-          cartCount.textContent = 0;
-          return;
+      const cartCheckoutBtn = document.getElementById('user-cart-checkout-btn');
+      cartCheckoutBtn.addEventListener('click', async () => {
+        cartCheckoutBtn.disabled = true;
+        cartCheckoutBtn.textContent = 'Procesando...';
+        document.getElementById('user-cart-error').style.display = 'none';
+        try {
+          const res = await fetch('/api/products/cart/checkout', { method: 'POST' });
+          const data = await res.json();
+          if (res.ok) {
+            renderCartReview({ products: [], total: 0 });
+            updateCartCount({ products: [] });
+            document.getElementById('user-cart-error').style.display = 'block';
+            document.getElementById('user-cart-error').style.color = '#388e3c';
+            document.getElementById('user-cart-error').textContent = '¡Compra realizada con éxito!';
+            await fetchUserCart();
+          } else {
+            document.getElementById('user-cart-error').style.display = 'block';
+            document.getElementById('user-cart-error').style.color = '#d32f2f';
+            document.getElementById('user-cart-error').textContent = data.error || 'Error en el checkout';
+            if (data.unavailable) {
+              // Highlight unavailable items
+              window._cartReviewUnavailable = data.unavailable.map(u => u.id);
+              renderCartReview(window._cartReviewData);
+            }
+          }
+        } catch (err) {
+          document.getElementById('user-cart-error').style.display = 'block';
+          document.getElementById('user-cart-error').style.color = '#d32f2f';
+          document.getElementById('user-cart-error').textContent = 'Error de conexión';
+        } finally {
+          cartCheckoutBtn.disabled = false;
+          cartCheckoutBtn.textContent = 'Checkout';
         }
-        const count = cart.products.reduce((sum, p) => sum + (p.quantity || 0), 0);
-        cartCount.textContent = count;
+      });
+      async function fetchCartReview() {
+        const res = await fetch('/api/products/cart/review');
+        const data = await res.json();
+        window._cartReviewData = data;
+        window._cartReviewUnavailable = (data.products || []).filter(p => !p.inStock).map(p => p.id);
+        renderCartReview(data);
       }
-
-      function renderCartModal() {
-        const cart = window._userCart || { products: [] };
-        if (!cart.products || !cart.products.length) {
-          cartContents.innerHTML = `<p>Tu carrito está vacío.</p>` +
+      function renderCartReview(data) {
+        const { products, total } = data;
+        const contents = document.getElementById('user-cart-contents');
+        const totalDiv = document.getElementById('user-cart-total');
+        const checkoutBtn = document.getElementById('user-cart-checkout-btn');
+        if (!products || products.length === 0) {
+          contents.innerHTML = '<p>Tu carrito está vacío.</p>' +
             `{{#if user.cart}}<div style="color:#888; font-size:0.97em; margin-top:0.5em;">Carrito ID: <b>{{user.cart}}</b></div>{{/if}}`;
+          totalDiv.textContent = '';
+          checkoutBtn.style.display = 'none';
           return;
         }
-        cartContents.innerHTML = '<ul style="list-style:none; padding:0;">' +
-          cart.products.map(p =>
-            `<li style="margin-bottom:0.5em;">${p.product && p.product.name ? p.product.name : 'Producto'} x ${p.quantity} <span style="color:#888;">($${p.product && p.product.price ? p.product.price.toFixed(2) : '0.00'})</span></li>`
+        contents.innerHTML = '<ul style="list-style:none; padding:0;">' +
+          products.map(p =>
+            `<li style="margin-bottom:0.5em;${!p.inStock ? ' background:#fff3e0; color:#d32f2f; border-radius:6px; padding:0.5em;' : ''}">
+              <b>${p.name}</b> x ${p.quantity} <span style="color:#888;">($${p.price.toFixed(2)} c/u)</span>
+              <button data-id="${p.id}" class="remove-from-cart-btn" style="margin-left:1em; color:#d32f2f; background:none; border:none; cursor:pointer;">🗑️</button>
+              ${!p.inStock ? `<div style='font-size:0.95em; color:#d32f2f;'>Stock insuficiente (disponible: ${p.availableStock})</div>` : ''}
+            </li>`
           ).join('') +
           '</ul>';
+        totalDiv.textContent = 'Total: $' + total.toFixed(2);
+        checkoutBtn.style.display = products.every(p => p.inStock) ? '' : 'none';
       }
+      // Remove from cart logic
+      document.getElementById('user-cart-contents').addEventListener('click', async (e) => {
+        if (e.target.classList.contains('remove-from-cart-btn')) {
+          const id = e.target.getAttribute('data-id');
+          if (!id) return;
+          e.target.disabled = true;
+          try {
+            const res = await fetch('/api/products/cart/remove', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ productId: id })
+            });
+            await fetchCartReview();
+            await fetchUserCart();
+          } catch (err) {
+            // Optionally show error
+          } finally {
+            e.target.disabled = false;
+          }
+        }
+      });
 
       fetchUserProducts();
       fetchUserCart();

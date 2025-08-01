@@ -31,6 +31,16 @@ const cartDAO = {
       return cart.populate('products.product');
     }
     return null;
+  },
+  async removeProductFromCart(userId, productId) {
+    const cart = await cartModel.findOne({ user: userId });
+    if (!cart) return null;
+    cart.products = cart.products.filter(p => p.product.toString() !== productId);
+    await cart.save();
+    return cart.populate('products.product');
+  },
+  async deleteCartByUserId(userId) {
+    return cartModel.findOneAndDelete({ user: userId });
   }
 };
 

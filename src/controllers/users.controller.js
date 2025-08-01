@@ -3,6 +3,7 @@ import { toUserDTO } from '../dto/user.dto.js';
 import jwt from 'jsonwebtoken';
 import { sendAdminRequestEmail } from '../utils/mail.js';
 import { sendAdminApprovalEmail } from '../utils/mail.js';
+import cartDAO from '../dao/cart.dao.js';
 
 export async function getUsers(req, res) {
   try {
@@ -131,4 +132,18 @@ export async function getAllUsers(req, res) {
   }
   const users = await userDAO.findAll();
   res.json(users.map(toUserDTO));
+}
+
+export async function adminCleanupUserCart(req, res) {
+  if (!req.user || req.user.role !== 'admin') {
+    return res.status(403).json({ error: 'Solo administradores pueden limpiar carritos' });
+  }
+  const { uid } = req.params;
+  const user = await userDAO.findById(uid);
+  if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+  if (!user.cart) return res.status(400).json({ error: 'El usuario no tiene carrito asignado' });
+  await cartDAO.deleteCartByUserId(uid);
+  user.cart = null;
+  await user.save();
+  res.json({ message: 'Carrito limpiado exitosamente' });
 } 

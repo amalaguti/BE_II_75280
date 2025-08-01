@@ -92,3 +92,76 @@ export async function getCart(req, res) {
   const cart = await cartDAO.getCartByUserId(req.user.id);
   res.json(cart || { products: [] });
 }
+
+export async function getCartReview(req, res) {
+  if (!req.user || req.user.role !== 'user') {
+    return res.status(403).json({ error: 'Solo usuarios pueden ver su carrito' });
+  }
+  const cart = await cartDAO.getCartByUserId(req.user.id);
+  if (!cart || !cart.products || cart.products.length === 0) {
+    return res.json({ products: [], total: 0 });
+  }
+  // For each product, check if stock is still valid
+  let total = 0;
+  const products = await Promise.all(cart.products.map(async (item) => {
+    const prod = item.product;
+    const latest = await productDAO.findById(prod._id);
+    const inStock = latest && latest.stock >= item.quantity;
+    const price = prod.price * item.quantity;
+    total += price;
+    return {
+      id: prod._id,
+      name: prod.name,
+      price: prod.price,
+      quantity: item.quantity,
+      description: prod.description,
+      inStock,
+      availableStock: latest ? latest.stock : 0
+    };
+  }));
+  res.json({ products, total });
+}
+
+export async function removeFromCart(req, res) {
+  if (!req.user || req.user.role !== 'user') {
+    return res.status(403).json({ error: 'Solo usuarios pueden modificar su carrito' });
+  }
+  const { productId } = req.body;
+  if (!productId) return res.status(400).json({ error: 'Falta productId' });
+  const updatedCart = await cartDAO.removeProductFromCart(req.user.id, productId);
+  res.json(updatedCart || { products: [] });
+}
+
+export async function checkoutCart(req, res) {
+  if (!req.user || req.user.role !== 'user') {
+    return res.status(403).json({ error: 'Solo usuarios pueden hacer checkout' });
+  }
+  const cart = await cartDAO.getCartByUserId(req.user.id);
+  if (!cart || !cart.products || cart.products.length === 0) {
+    return res.status(400).json({ error: 'El carrito está vacío' });
+  }
+  // Check stock for all items
+  const unavailable = [];
+  for (const item of cart.products) {
+    const prod = await productDAO.findById(item.product._id);
+    if (!prod || prod.stock < item.quantity) {
+      unavailable.push({
+        id: item.product._id,
+        name: item.product.name,
+        requested: item.quantity,
+        available: prod ? prod.stock : 0
+      });
+    }
+  }
+  if (unavailable.length > 0) {
+    return res.status(409).json({ error: 'Algunos productos no tienen stock suficiente', unavailable });
+  }
+  // All items available, proceed to update stock and clear cart
+  for (const item of cart.products) {
+    const prod = await productDAO.findById(item.product._id);
+    await productDAO.updateById(prod._id, { stock: prod.stock - item.quantity });
+  }
+  cart.products = [];
+  await cart.save();
+  res.json({ message: 'Compra realizada con éxito' });
+}
