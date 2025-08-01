@@ -1,7 +1,7 @@
 export function toUserDTO(user) {
   if (!user) return null;
   return {
-    id: user._id,
+    id: user._id ? user._id.toString() : undefined,
     name: user.first_name,
     last_name: user.last_name,
     email: user.email,

@@ -622,7 +622,7 @@
         renderCartModal();
         // Debug: log cart and user info
         const cart = window._userCart;
-        const userIdFromUI = '{{user._id}}';
+        const userIdFromUI = '{{user.id}}';
         if (cart) {
           console.log('Cart info:', cart);
           if (cart.user) {
